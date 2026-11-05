@@ -270,7 +270,8 @@ class CallUsage(_Model):
 
     step: str
     provider: str
-    model: str
+    model: str                       # the model we asked for
+    served_model: str = ""           # the model that really answered (a router may pick another)
     prompt_tokens: int = 0
     completion_tokens: int = 0
     actual_cost_usd: float = 0.0
@@ -286,10 +287,15 @@ class CampaignResult(_Model):
     brand: BrandProfile
     vision: VisionAnalysis | None = None
     copy_: AdCopy | None = Field(default=None, alias="copy")
-    files: list[Path] = Field(default_factory=list)
+    files: list[Path] = Field(default_factory=list)          # names inside the product folder
     usage: list[CallUsage] = Field(default_factory=list)
-    fallbacks: list[str] = Field(default_factory=list)
+    fallbacks: list[str] = Field(default_factory=list)       # quality was downgraded, and why
+    warnings: list[str] = Field(default_factory=list)        # things a human should check
     prompt_versions: dict[str, str] = Field(default_factory=dict)
+    image_source: str = ""                                   # upload | url | local | catalog_url
+    product_mode: str = ""                                   # cutout | framed
+    background_sources: dict[str, str] = Field(default_factory=dict)
+    timings_s: dict[str, float] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")

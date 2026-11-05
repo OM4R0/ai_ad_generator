@@ -17,6 +17,7 @@ import base64
 import io
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass
 from typing import Callable, TypeVar
@@ -66,7 +67,16 @@ class _Fatal(Exception):
 
 
 class _QuotaExhausted(_Fatal):
-    """The model's DAILY free quota is used up: skip it for the rest of the session."""
+    """Skip it for the rest of the session: a DAILY free quota is used up,
+    or the provider rejected the API key.
+
+    `whole_provider`: the cap is per account (OpenRouter's free-models-per-day),
+    so every model on that provider is skipped, not just this one.
+    """
+
+    def __init__(self, message: str, *, whole_provider: bool = False):
+        super().__init__(message)
+        self.whole_provider = whole_provider
 
 
 class LLMClient:
@@ -84,8 +94,10 @@ class LLMClient:
             60.0 / settings.max_requests_per_min if settings.max_requests_per_min > 0 else 0.0
         )
         self._last_request_at: float | None = None
-        # (base_url, model) pairs whose daily quota ran out in this session.
+        # (base_url, model) pairs whose daily quota ran out in this session,
+        # and providers whose account-wide daily cap ran out.
         self._exhausted: set[tuple[str, str]] = set()
+        self._exhausted_providers: set[str] = set()
 
     # ------------------------------------------------------------- lifecycle
 
@@ -121,8 +133,10 @@ class LLMClient:
         Raises:
             LLMError: when the primary and every fallback model failed.
         """
-        if not self._settings.llm_api_key:
-            raise LLMError("LLM is not configured: set LLM_API_KEY in .env")
+        s = self._settings
+        if not s.llm_api_key and not (s.fallback_api_key and s.fallback_models):
+            raise LLMError("LLM is not configured: set LLM_API_KEY (Gemini) and/or "
+                           "FALLBACK_API_KEY + FALLBACK_MODELS (OpenRouter) in .env")
 
         messages = [
             {"role": "system", "content": system},
@@ -136,16 +150,21 @@ class LLMClient:
         if not providers:
             raise LLMError(f"every configured model is out of its daily quota ({step!r})")
         for provider in providers:
+            if provider.base_url in self._exhausted_providers:
+                continue  # its account-wide daily cap ran out earlier in THIS call
             try:
                 result = self._ask_provider(provider, messages, schema, temperature, usage)
             except _QuotaExhausted as exc:
-                self._exhausted.add((provider.base_url, provider.model))
-                failures.append(f"{provider.model}@{provider.name}: {exc}")
-                logger.warning("LLM %s: %s; skipping it for this session", step, exc)
+                if exc.whole_provider:
+                    self._exhausted_providers.add(provider.base_url)
+                else:
+                    self._exhausted.add((provider.base_url, provider.model))
+                failures.append(f"{provider.model}@{provider.name}: {self._redact(exc)}")
+                logger.warning("LLM %s: %s; skipping it for this session", step, self._redact(exc))
                 continue
             except (_Fatal, _Retryable, ValueError, ValidationError) as exc:
-                failures.append(f"{provider.model}@{provider.name}: {exc}")
-                logger.warning("LLM %s failed on %s: %s", step, provider.model, exc)
+                failures.append(f"{provider.model}@{provider.name}: {self._redact(exc)}")
+                logger.warning("LLM %s failed on %s: %s", step, provider.model, self._redact(exc))
                 continue
             usage.provider, usage.model = provider.name, provider.model
             usage.latency_s = round(time.monotonic() - started, 2)
@@ -159,13 +178,24 @@ class LLMClient:
     def _providers(self, model: str) -> list[_Provider]:
         """Order: requested model → other models on the same key → fallback provider."""
         s = self._settings
-        providers = [_Provider(s.llm_base_url, s.llm_api_key, model)]
-        providers += [_Provider(s.llm_base_url, s.llm_api_key, m)
-                      for m in s.llm_fallback_models if m != model]
+        providers: list[_Provider] = []
+        if s.llm_api_key:  # never send a keyless request to the primary provider
+            providers += [_Provider(s.llm_base_url, s.llm_api_key, model)]
+            providers += [_Provider(s.llm_base_url, s.llm_api_key, m)
+                          for m in s.llm_fallback_models if m != model]
         if s.fallback_api_key:
             providers += [_Provider(s.fallback_base_url, s.fallback_api_key, m)
                           for m in s.fallback_models]
-        return [p for p in providers if (p.base_url, p.model) not in self._exhausted]
+        return [p for p in providers if (p.base_url, p.model) not in self._exhausted
+                and p.base_url not in self._exhausted_providers]
+
+    def _redact(self, error: object) -> str:
+        """Error text with the API keys masked: it goes to logs and metadata.json."""
+        text = str(error)
+        for key in (self._settings.llm_api_key, self._settings.fallback_api_key):
+            if key:
+                text = text.replace(key, "***")
+        return text
 
     def _ask_provider(self, provider, messages, schema, temperature, usage):
         """One provider: request, validate, and if invalid one repair round."""
@@ -173,7 +203,8 @@ class LLMClient:
         try:
             return schema.model_validate(parse_json_text(text))
         except (ValueError, ValidationError) as exc:
-            logger.info("Invalid JSON from %s, asking for a repair: %s", provider.model, exc)
+            logger.info("Invalid JSON from %s, asking for a repair: %s",
+                        provider.model, self._redact(exc))
             repair = [
                 *messages,
                 {"role": "assistant", "content": text},
@@ -195,7 +226,8 @@ class LLMClient:
                 last = exc
                 if attempt < MAX_ATTEMPTS - 1:
                     wait = exc.wait_s if exc.wait_s is not None else BACKOFF_BASE_S * 2 ** attempt
-                    logger.info("Retrying %s in %.1fs: %s", provider.model, wait, exc)
+                    logger.info("Retrying %s in %.1fs: %s", provider.model, wait,
+                                self._redact(exc))
                     self._sleep(wait)
         assert last is not None
         raise last
@@ -221,15 +253,14 @@ class LLMClient:
             raise _Retryable(f"network error: {exc!r}") from exc
 
         if response.status_code == 429:
-            delay, per_day = _quota_info(response)
-            if per_day:
-                hours = f" (resets in {delay / 3600:.1f} h)" if delay else ""
-                raise _QuotaExhausted(f"daily free quota used up{hours}")
-            raise _Retryable("HTTP 429 (rate limited)",
-                             min(delay, MAX_RETRY_AFTER_S) if delay is not None
-                             else _retry_after(response))
+            raise _rate_limit_error(response)
         if response.status_code in RETRYABLE_STATUS:
             raise _Retryable(f"HTTP {response.status_code}", _retry_after(response))
+        if response.status_code == 401 or (
+                response.status_code == 400 and "api key" in response.text.lower()):
+            # The KEY is wrong, so every model on this provider would fail the same way.
+            raise _QuotaExhausted(f"API key rejected (HTTP {response.status_code})",
+                                  whole_provider=True)
         if response.status_code >= 400:
             raise _Fatal(f"HTTP {response.status_code}: {response.text[:300]}")
 
@@ -239,6 +270,10 @@ class LLMClient:
             raise _Retryable(f"response is not JSON: {response.text[:200]}") from exc
         if not isinstance(payload, dict):
             raise _Retryable(f"unexpected response body: {str(payload)[:200]}")
+        if isinstance(payload.get("error"), dict) and not payload.get("choices"):
+            raise _error_in_body(payload["error"])  # OpenRouter: errors can come with HTTP 200
+        served = payload.get("model")
+        usage.served_model = served if isinstance(served, str) and served else provider.model
         tokens = payload.get("usage")
         if isinstance(tokens, dict):  # usage is informative: never lose an answer over it
             usage.prompt_tokens += _as_int(tokens.get("prompt_tokens"))
@@ -247,9 +282,12 @@ class LLMClient:
             content = payload["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
             raise _Retryable(f"malformed response: {str(payload)[:200]}") from exc
-        if not content:
+        text = _content_text(content)
+        if text is None:
+            raise _Retryable(f"reply content is not text: {type(content).__name__}")
+        if not text.strip():
             raise _Retryable("empty response")
-        return content
+        return text
 
     def _respect_rate_limit(self) -> None:
         now = time.monotonic()
@@ -271,19 +309,45 @@ class LLMClient:
 # --------------------------------------------------------------------------- #
 
 
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+MAX_JSON_STARTS = 50   # how many "{" positions to try in a chatty reply
+
+
 def parse_json_text(text: str) -> object:
-    """Parse JSON from an LLM reply that may be fenced (```json) or wrapped in prose."""
-    cleaned = text.strip()
+    """Parse JSON from an LLM reply that may be fenced (```json), wrapped in prose,
+    or preceded by a reasoning model's <think>...</think> block."""
+    cleaned = _THINK_RE.sub("", text).strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else ""
         cleaned = cleaned.rsplit("```", 1)[0]
     try:
         return json.loads(cleaned)
     except ValueError:
-        start, end = cleaned.find("{"), cleaned.rfind("}")
-        if start >= 0 and end > start:
-            return json.loads(cleaned[start:end + 1])
-        raise ValueError(f"no JSON object in reply: {text[:120]!r}") from None
+        pass
+    # Prose around the JSON: try each "{" and keep the longest object that parses.
+    decoder, best, best_len = json.JSONDecoder(), None, 0
+    starts = [i for i, ch in enumerate(cleaned) if ch == "{"][:MAX_JSON_STARTS]
+    for start in starts:
+        try:
+            value, end = decoder.raw_decode(cleaned, start)
+        except ValueError:
+            continue
+        if isinstance(value, dict) and end - start > best_len:
+            best, best_len = value, end - start
+    if best is None:
+        raise ValueError(f"no JSON object in reply: {text[:120]!r}")
+    return best
+
+
+def _content_text(content: object) -> str | None:
+    """The reply text: a string, or a list of {"type": "text"} parts joined (some
+    OpenAI-compatible providers send parts). None if it is neither."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = [p.get("text") for p in content if isinstance(p, dict)]
+        return "".join(t for t in parts if isinstance(t, str))
+    return None
 
 
 def _user_content(text: str, image: Image.Image | None) -> list[dict]:
@@ -348,6 +412,50 @@ def _quota_info(response: httpx.Response) -> tuple[float | None, bool]:
     if delay is not None and delay > DAILY_QUOTA_MIN_DELAY_S:
         per_day = True
     return delay, per_day
+
+
+def _rate_limit_error(response: httpx.Response) -> Exception:
+    """Classify an HTTP 429. Three different situations share this one status code:
+
+    - a DAILY quota (Gemini per model, OpenRouter per account) -> skip for the session;
+    - OpenRouter's shared free pool is busy upstream -> try the next model now
+      (waiting 3 s + 6 s did not help in the live test, 2026-11-05);
+    - a per-minute limit -> wait and retry the same model.
+    """
+    delay, per_day = _quota_info(response)
+    if per_day:
+        hours = f" (resets in {delay / 3600:.1f} h)" if delay else ""
+        return _QuotaExhausted(f"daily free quota used up{hours}")
+    message, raw = _openrouter_error_text(response)
+    if "per-day" in message:
+        return _QuotaExhausted("daily free quota used up (OpenRouter free-models-per-day)",
+                               whole_provider=True)
+    if "upstream" in raw:
+        return _Fatal("busy: the shared free pool is rate-limited upstream")
+    return _Retryable("HTTP 429 (rate limited)",
+                      min(delay, MAX_RETRY_AFTER_S) if delay is not None
+                      else _retry_after(response))
+
+
+def _openrouter_error_text(response: httpx.Response) -> tuple[str, str]:
+    """(error.message, error.metadata.raw + limit_source), lower-cased; empty if absent."""
+    try:
+        body = response.json()
+    except ValueError:
+        return "", ""
+    error = body.get("error") if isinstance(body, dict) else None
+    if not isinstance(error, dict):
+        return "", ""
+    meta = error.get("metadata") if isinstance(error.get("metadata"), dict) else {}
+    raw = f"{meta.get('raw', '')} {meta.get('limit_source', '')}"
+    return str(error.get("message", "")).lower(), raw.lower()
+
+
+def _error_in_body(error: dict) -> Exception:
+    """An error object inside an HTTP 200 reply: treat it like that HTTP status."""
+    code = _as_int(error.get("code"))
+    message = f"provider error {code or '?'}: {str(error.get('message', ''))[:300]}"
+    return _Retryable(message) if code in RETRYABLE_STATUS else _Fatal(message)
 
 
 def _as_int(value: object) -> int:

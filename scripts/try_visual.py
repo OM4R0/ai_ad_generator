@@ -6,7 +6,7 @@ Usage (from the project folder):
 
 Copy: uses the copy saved by `scripts.try_copy` (.cache/try/copy_<id>.json) if it
 exists, otherwise plain template copy from the catalog. Output: .cache/try/visual_<id>/
-This is a temporary helper for studying Phase 5; Phase 6 adds the real CLI (main.py).
+A helper for studying Phase 5. The full pipeline (all steps + output folder) is main.py.
 """
 
 from __future__ import annotations

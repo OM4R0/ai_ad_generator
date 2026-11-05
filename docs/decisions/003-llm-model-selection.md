@@ -47,3 +47,38 @@ The Gemini 429 body said: *"Generate content requests per day limit exceeded on 
 - **Decision:** split the steps across models (DD-2 made this a config change): `VISION_MODEL=gemini-3.5-flash-lite` (describing a photo is the easier task), `COPY_MODEL=gemini-3.5-flash` (the stronger model writes). Two separate daily quotas.
 - **Code:** a daily-quota 429 now skips that model at once and for the rest of the session (no pointless retries); a per-minute 429 is waited out.
 - **Operational rule:** run the 10-product batch once after the daily reset, cache the results, and record the video from the cache.
+
+## OpenRouter backup, tested live (Phase 6, 2026-11-05)
+The owner added an OpenRouter key so the backup is real, not only planned. The key is on the
+free tier (**50 free requests per day per account**). Of 454 OpenRouter models, 16 are free, and only
+a few both **read images** (needed by the vision step) and **return JSON** (`response_format`).
+
+Live test with our real prompts (vision on headphones #13, Arabic copy on backpack #23), Gemini switched off:
+
+| Model | Vision | Arabic copy | Notes |
+|---|---|---|---|
+| `nvidia/nemotron-3.5-super-vl:free` | ✅ black headphones, correct | ✅ valid, a little stiff ("الحقيبة تنقع") | slow: 83 s for the copy |
+| `openrouter/free` (router) | ✅ | ✅ the most natural Arabic of the three | picks a random free model each time (this time `nemotron-3-nano`) |
+| `google/gemma-4-31b-it:free` | ❌ HTTP 429 | ❌ HTTP 429 | not our limit: Google's shared free pool was busy (`limit_source: upstream_provider_shared_pool`) |
+
+**Decision:** `FALLBACK_MODELS=nvidia/nemotron-3.5-super-vl:free,openrouter/free,google/gemma-4-31b-it:free`
+(ordered by evidence: the two that passed come first; gemma is last because it couldn't be tested).
+
+**What the live test changed in the code** (all test-first, `tests/test_openrouter.py`):
+- **One 429, three meanings:** a daily quota (Gemini per model, OpenRouter per account) skips for the
+  session; OpenRouter's busy shared pool moves to the next model at once (waiting 3 s + 6 s didn't help);
+  a per-minute limit is waited out.
+- **OpenRouter's daily cap is per account**, so all OpenRouter models are skipped, not just one.
+- **A rejected key is a provider problem, not a model problem:** seen live, an invalid Gemini key was
+  tried on all 3 Gemini models (≈18 s wasted per call with request pacing). Now the whole provider is skipped.
+- **Errors inside an HTTP 200 reply** (OpenRouter does this) are classified like the HTTP status they contain.
+- **Reply text as a list of parts**, or `<think>` reasoning before the JSON: handled (was a crash / a wasted repair call).
+- **`served_model`** records which model really answered (a router like `openrouter/free` picks one itself), so `metadata.json` tells the truth.
+- **Keys are masked** (`***`) in every error message and log line, because these end up in `metadata.json`.
+- **OpenRouter alone is enough:** with no Gemini key, the pipeline runs on the backup instead of refusing.
+- **`Settings.config_warnings()`**: the CLI warns at start-up if, e.g., `FALLBACK_API_KEY` is set but
+  `FALLBACK_MODELS` is empty (this happened: the backup would silently never have been used).
+
+**Live hand-over proof:** with a deliberately invalid Gemini key, the vision step moved to OpenRouter on its own and
+answered correctly in 26 s. In the first live CLI run, copy found `gemini-3.5-flash` and `gemini-3.8-flash` out of
+quota, skipped them without waiting, and OpenRouter wrote the ad.

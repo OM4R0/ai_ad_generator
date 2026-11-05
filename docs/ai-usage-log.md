@@ -145,3 +145,36 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **Stress test, live:** background removal 30/30 with no crash; the photo check correctly flagged the iced coffee (kettle) and Bleu de Chanel (oud); Pollinations worked with pacing.
 - **Gemini free tier = 20 requests/day/model** (read from the full 429 body). The client now skips a model whose daily quota is used up, and vision/copy were split across two models for two quotas.
 - **Two process lessons:** (1) measure before fixing: the "pieces" rule wrongly rejected the headphones; measuring all 30 photos showed it was the 96 px resolution. (2) A test must fail on the wrong code: the synthetic test passed with the old rule too, so a real-photo regression test was added and shown to fail with the old setting.
+
+## Phase 6 — Full run (cache, output writer, pipeline, CLI) + OpenRouter backup
+
+### My request
+"I added the OpenRouter key: make it the backup for Gemini. Start Phase 6. TDD: make sure everything works with OpenRouter."
+
+### OpenRouter, checked live before trusting it
+- The AI checked `.env` **without printing the key** (only "set / empty / prefix looks right") and found a silent problem: the key was set but `FALLBACK_MODELS` was empty, so the backup would never have been used.
+- It listed OpenRouter's free models (16 of 454) and kept only those that read images **and** return JSON, then ran our real vision + Arabic copy prompts on three of them with Gemini switched off. Results and the chosen order are in ADR-003.
+- The live replies showed behaviour the mocks didn't have: a 429 that means "Google's shared free pool is busy" (not our limit), a router (`openrouter/free`) answering from a different model, and an invalid key being retried on every Gemini model.
+
+### Test-first fixes (`tests/test_openrouter.py`, 25 tests)
+10 real problems fixed, each with a test that failed first: fallback-only setup refused to run; busy-pool 429 waited for nothing; OpenRouter's per-account daily cap retried every model; errors inside HTTP 200 were retried as "malformed"; list-shaped content crashed the client; `<think>` text broke JSON parsing; the answering model wasn't recorded; a rejected key was tried on every model; an API key echoed in an error could reach logs and `metadata.json`; no start-up warning for a half-configured backup.
+- **TDD check:** some tests first failed for the wrong reason (the client refused before reaching the tested behaviour). The AI fixed that first, then re-ran to see each test fail for its own reason.
+- **Two tests passed immediately** (key routing, key masking). The AI deliberately broke the code (swapped keys, disabled masking) to prove the tests catch it, then restored it.
+- **Live hand-over:** with a deliberately invalid Gemini key, the vision step moved to OpenRouter and answered correctly (26 s), spending no Gemini quota.
+
+### Phase 6, built test-first (stub → failing tests → code)
+- `core/cache.py`: wraps the LLM client; key = SHA-256 of step, model, schema, temperature, full prompt text and image pixels; failures never cached; corrupt entries are misses; atomic writes.
+- `core/output_writer.py`: the brief's exact folder; Windows-safe names; reruns delete only the files the writer owns; same-name products get separate folders.
+- `core/pipeline.py`: one product through all six steps, used by both the CLI and (Phase 7) the dashboard; a failing product never stops the batch; `--offline` reuses cached answers.
+- `main.py`: the 10 demo products by default, `--ids`, `--all`, `--offline`, `--refresh`; prints which model really answered, fallbacks, warnings, tokens and cost; exit code 1 if any product failed.
+- Total: **371 tests** (was 265).
+
+### Real runs
+- `--offline`, 10 demo products, real background removal: 10/10 in 24 s.
+- Live, 2 products: vision on Gemini flash-lite; copy found two Gemini models out of quota, skipped them without waiting, and OpenRouter wrote both ads. 204 s; the rerun took **7 s with 0 requests** (cache).
+- The vision check flagged a small third-party logo ("LEVELS") on the backpack photo (#23). Decision pending (keep it or replace the product).
+
+### What I decided / still have to do
+- Keep the evidence-based model order for the backup.
+- The 10-product live batch runs on Friday after the Gemini daily reset (midnight Pacific time); the video is recorded from the cache.
+

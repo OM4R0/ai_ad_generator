@@ -38,7 +38,7 @@
 | # | Role | Where it runs | Default | Calls per product |
 |---|---|---|---|---|
 | 1 | **Multimodal LLM**: looks at the image (vision) **and** writes the copy | **Gemini** free tier (fallback: OpenRouter `:free`) | Gemini Flash, confirmed by benchmark (ADR-003) | 2 (vision + copy) |
-| 2 | **Image generator**: paints the scene/background only, never the product | Pollinations (FLUX, no key) | ADR-007 | 1–2 (feed + story scenes; carousel reuses them) |
+| 2 | **Image generator**: paints the scene/background only, never the product | Pollinations (FLUX, no key) | ADR-007 1 (the story scene; the square is cut from its middle, carousel reuses it) |
 | 3 | **Background remover**: cuts the product out of its photo | Local (`rembg`) | `u2net` / `isnet-general-use` | 0 API calls |
 
 So: **two external models + one small local model.**
@@ -146,7 +146,7 @@ The LLM returns an `AdCopyDraft` (variants, carousel, captions); our code adds `
 
 **Note: the reference photos are lifestyle shots, not white studio shots** (found in Phase 2; e.g. black headphones on a bright-yellow background). Colours taken from the raw photo therefore describe the *background*, not the product. Hence the colour fallback order above: the vision model's product colours (Phase 3) and the background-removed cut-out (Phase 5) come before the raw photo. This also makes background-removal quality more important than first assumed (ADR-001).
 
-**Budget:** 2 LLM calls per product → 10 products = 20 calls (the free daily cap is 50). Cached results cost 0 on reruns.
+**Budget:** 2 LLM calls per product → 10 products = 20 calls. Measured limits: Gemini free tier = **20 requests per day per model**, so vision and copy run on two models (10 calls each); OpenRouter backup = 50 free requests per day per account (ADR-003). Cached results cost 0 on reruns (measured: a 2-product rerun went from 204 s to 7 s with 0 requests).
 
 **Why one copy call returns everything** (both variants, carousel, captions): it keeps the call count at 2 and keeps the copy consistent across formats. The cost is a larger JSON response, which is handled by schema validation + one repair retry.
 
@@ -201,15 +201,26 @@ Prompt design principles (from spec §8):
 | Timeout | no reply within `LLM_TIMEOUT_S` | move to the next model at once (an overloaded model tends to time out again; found in the Phase 3 benchmark) |
 | Free model unavailable | 404 / provider error | next model in the fallback list (OpenRouter `models` array) |
 | Invalid JSON | Pydantic validation | 1 repair retry with the error message included in the prompt |
-| Daily cap reached | 429 + quota message | stop the LLM calls for the batch, finish the remaining products from cache/templates, report this clearly |
+| Daily cap reached | 429 + quota message (Gemini: `PerDay` quota ID or a long `retryDelay`; OpenRouter: `free-models-per-day`) | skip that model (Gemini) or the whole provider (OpenRouter's cap is per account) for the rest of the session, with no waiting; when nothing is left, finish from cache/templates and report it |
+| Shared free pool busy | OpenRouter 429 with `upstream` in the error | next model at once (waiting did not help in the live test) |
+| Rejected API key | 401, or 400 mentioning the API key | skip every model on that provider (the key, not the model, is wrong) |
+| Error inside an HTTP 200 | `error` object and no `choices` (OpenRouter) | treated like the HTTP status it contains |
 | Image service down | timeout / non-image response | gradient background |
 | Bad catalog row / missing image | loader / image_source | skip that product, continue the batch |
 
-Every fallback is appended to `CampaignResult.fallbacks` → `metadata.json`, and shown in the CLI summary and the dashboard. Nothing degrades silently.
+Every fallback is appended to `CampaignResult.fallbacks` → `metadata.json`, and shown in the CLI summary and the dashboard. Nothing degrades silently. API keys are masked (`***`) in every error message, because error text ends up in `metadata.json`.
 
 ## 9. Caching (`cache.py`)
 
-Key = SHA-256 of *(step name, model ID, prompt version, product row, brand profile, image hash)*. Values are stored as JSON/PNG under `.cache/` (git-ignored). Any change to the inputs, the prompt version, or the model invalidates the entry automatically. The dashboard's "Regenerate" bypasses the cache for that step only (and adds a variation seed).
+`CachedLLM` wraps the LLM client with the same `complete_json` interface, so the vision and copy steps don't know whether an answer is live or replayed.
+
+Key = SHA-256 of *(step, model ID, schema, temperature, the full system + user prompt text, image pixels)*. The prompt text already contains the product row, the brand profile, the vision findings, the prompt version and the variation number, so a change to any of them is automatically a miss (this is simpler and stricter than listing those fields one by one). Entries are JSON under `.cache/llm/<step>/` (git-ignored), written atomically.
+
+- **Only successes are cached:** a failed call (quota out) is never stored, so the next run tries the AI again.
+- A corrupt entry, or one that no longer fits the schema, is a miss, never a crash.
+- `--refresh` ignores stored answers; `--offline` makes no AI calls but still replays stored answers.
+- The dashboard's "Regenerate" adds a variation number to the prompt, so it is naturally a miss for the copy step only (vision is replayed).
+- Scene images have their own cache (`.cache/scenes/`, by prompt + size + seed).
 
 ## 10. Configuration (`.env`)
 

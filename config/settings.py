@@ -68,7 +68,30 @@ class Settings:
 
     @property
     def llm_configured(self) -> bool:
-        return bool(self.llm_api_key and self.vision_model and self.copy_model)
+        """True if at least one LLM provider can be called (Gemini, or the backup alone)."""
+        primary = bool(self.llm_api_key and self.vision_model and self.copy_model)
+        return primary or self.backup_configured
+
+    @property
+    def backup_configured(self) -> bool:
+        return bool(self.fallback_api_key and self.fallback_models)
+
+    def config_warnings(self) -> list[str]:
+        """Setup mistakes that would silently switch something off. Never includes a key."""
+        warnings: list[str] = []
+        if not self.llm_configured:
+            warnings.append("no LLM configured: every product will use template copy "
+                            "(set LLM_API_KEY and/or FALLBACK_API_KEY in .env)")
+        if self.fallback_api_key and not self.fallback_models:
+            warnings.append("FALLBACK_API_KEY is set but FALLBACK_MODELS is empty: "
+                            "the backup provider will never be used")
+        if self.fallback_models and not self.fallback_api_key:
+            warnings.append("FALLBACK_MODELS is set but FALLBACK_API_KEY is empty: "
+                            "the backup provider will never be used")
+        if self.llm_api_key.startswith("sk-or-") and "openrouter" not in self.llm_base_url:
+            warnings.append("LLM_API_KEY looks like an OpenRouter key (sk-or-...) but "
+                            "LLM_BASE_URL is not OpenRouter: put it in FALLBACK_API_KEY")
+        return warnings
 
     @classmethod
     def from_env(cls, env_file: Path | None = None) -> "Settings":
