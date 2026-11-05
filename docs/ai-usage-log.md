@@ -51,3 +51,12 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **Context:** I have a Gemini API key.
 - **My decision:** Use Gemini as the primary provider. Start with **one model** for vision + copy; move to two models only if the quality isn't good enough.
 - **AI proposal (accepted):** Keep OpenRouter as a fallback, and use Gemini's **OpenAI-compatible endpoint** so a single client serves both providers and switching is config-only. The AI also flagged that Gemini's free-tier limits are reported inconsistently online (from ~1,500/day down to ~20/day), so they must be checked on my own key in Phase 3 (ADR-003, ADR-007).
+
+---
+
+## Session 1 (cont.) — Phase 1: data contracts + catalog loader
+
+- **Built:** `core/schemas.py` (all data contracts from design §4), `config/settings.py` (env-driven config), `core/excel_loader.py` (FR-1), plus 18 tests. A project virtual env (`.venv`), `requirements.txt`, `.env.example`.
+- **Bug found by the tests, not by eye:** in the `.xlsx`, the `Image URL` cells **display "View Photo 🔗"**, and the real URL is stored as the cell's *hyperlink*. pandas reads only the visible text, so every product had a broken URL. The CSV has the real URLs. **Fix:** read the hyperlink targets with openpyxl; a test now asserts that xlsx and csv give identical products.
+- **Why this matters:** a hidden data-quality issue in the provided input. Without the xlsx-vs-csv test it would only have shown up later as "image download failed".
+- **Design choices in the loader:** bad rows are skipped and reported, never fatal; the CSV is the fallback if the xlsx can't be read; non-URL links become `None` (the local image still works).
