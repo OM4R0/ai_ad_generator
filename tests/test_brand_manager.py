@@ -229,3 +229,187 @@ def _close(actual: str, expected: str, tolerance: int = 40) -> bool:
     a = [int(actual[i:i + 2], 16) for i in (1, 3, 5)]
     e = [int(expected[i:i + 2], 16) for i in (1, 3, 5)]
     return all(abs(x - y) <= tolerance for x, y in zip(a, e))
+
+
+# =========================================================================== #
+# Edge cases — review 2 (written before the fixes; see docs/edge-cases.md)
+# =========================================================================== #
+
+import io as _io
+import logging as _logging
+
+import core.brand_manager as bm
+
+
+def _encrypted_pdf(user_password: str) -> bytes:
+    from pypdf import PdfReader, PdfWriter
+
+    writer = PdfWriter()
+    writer.append(PdfReader(_io.BytesIO(build_pdf(SAMPLE_LINES))))
+    writer.encrypt(user_password=user_password, owner_password="owner", algorithm="RC4-128")
+    buffer = _io.BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+# --- E1: catalog row with an empty Tone ----------------------------------- #
+
+def test_e1_empty_catalog_tone_gets_a_default_voice():
+    brand = brand_from_product(OUD.model_copy(update={"tone": ""}))
+    assert brand.brand_voice == bm.DEFAULT_VOICE
+
+
+# --- E2/E3: LLM returns partly invalid data -------------------------------- #
+
+def test_e2_llm_partial_garbage_keeps_the_valid_fields():
+    def llm(_text: str) -> dict:
+        return {"brand_voice": "Calm", "brand_colors": ["gold", "#123456"],
+                "notes": "extra key", "language": "Klingon"}
+
+    result = patch_from_pdf(build_pdf(["No colour codes in this PDF"]), extractor=llm)
+    assert result.patch.brand_voice == "Calm"
+    assert result.patch.brand_colors == ["#123456"]   # "gold" dropped
+    assert result.patch.language is None              # "Klingon" dropped
+    assert result.llm_used is True
+    joined = " ".join(result.warnings)
+    assert "gold" in joined and "notes" in joined and "language" in joined
+
+
+def test_e3_null_colours_from_llm_or_config_mean_empty():
+    assert BrandPatch.model_validate({"brand_colors": None}).brand_colors == []
+
+
+@pytest.mark.parametrize("output", ["just text", ["a", "list"], None, 42])
+def test_e2_llm_non_dict_output_falls_back_to_text_only(output):
+    result = patch_from_pdf(build_pdf(SAMPLE_LINES), extractor=lambda _: output)
+    assert result.llm_used is False and result.warnings
+    assert result.patch.brand_colors                    # still from the PDF text
+
+
+# --- E4/E5/E6: config files ------------------------------------------------ #
+
+def test_e4_json_saved_with_a_utf8_bom_still_loads(tmp_path: Path):
+    # Windows Notepad saves "UTF-8" files with a BOM; json.loads rejects it.
+    (tmp_path / "x.json").write_text(
+        json.dumps({"brand_name": "X", "brand_voice": "v"}), encoding="utf-8-sig"
+    )
+    patch = load_brand_config(tmp_path, "X")
+    assert patch is not None and patch.brand_voice == "v"
+
+
+@pytest.mark.parametrize("yaml_text", [
+    "brand_name: X\nbrand_colors:\n  - #1A1A1A\n  - #D4AF37\n",
+    "brand_name: X\nbrand_colors: #1A1A1A\n",
+])
+def test_e5_unquoted_hex_in_yaml_gives_a_clear_hint(tmp_path: Path, yaml_text: str):
+    # In YAML, '#' starts a comment, so unquoted colours silently become null.
+    (tmp_path / "x.yaml").write_text(yaml_text, encoding="utf-8")
+    with pytest.raises(BrandConfigError, match="quote"):
+        load_brand_config(tmp_path, "X")
+
+
+def test_e6_two_configs_for_the_same_brand_warn_and_use_the_first(tmp_path: Path, caplog):
+    for name in ("a.json", "b.json"):
+        (tmp_path / name).write_text(
+            json.dumps({"brand_name": "X", "brand_voice": f"from {name}"}), encoding="utf-8"
+        )
+    with caplog.at_level(_logging.WARNING):
+        patch = load_brand_config(tmp_path, "X")
+    assert patch.brand_voice == "from a.json"
+    assert "b.json" in caplog.text
+
+
+# --- E7/E8/E9: PDF input ---------------------------------------------------- #
+
+def test_e7_pdf_with_bytes_before_the_header_is_read():
+    data = b"\xef\xbb\xbfsome junk\n" + build_pdf(SAMPLE_LINES)
+    assert "AeroSonic Audio" in extract_pdf_text(data)
+
+
+def test_e8_password_protected_pdf_gives_a_clear_error():
+    with pytest.raises(BrandConfigError, match="password"):
+        extract_pdf_text(_encrypted_pdf("secret"))
+
+
+def test_e8_pdf_encrypted_with_an_empty_password_is_read():
+    assert "AeroSonic Audio" in extract_pdf_text(_encrypted_pdf(""))
+
+
+def test_e9_missing_pdf_file_is_a_brand_error(tmp_path: Path):
+    with pytest.raises(BrandConfigError, match="not found"):
+        extract_pdf_text(tmp_path / "missing.pdf")
+
+
+# --- E10: colour code formats ------------------------------------------------ #
+
+def test_e10_eight_digit_hex_drops_the_alpha_channel():
+    # Figma and CSS export #RRGGBBAA.
+    assert colors_from_text("Primary #0B1F3AFF, accent #00C2D1") == ["#0B1F3A", "#00C2D1"]
+
+
+# --- E11/E15: resolution safety --------------------------------------------- #
+
+def test_e11_pdf_for_another_brand_cannot_rename_the_product(tmp_path: Path):
+    brand = resolve_brand(OUD, brands_dir=tmp_path,
+                          pdf_patch=BrandPatch(brand_name="Kingsman & Co.", brand_voice="v"))
+    assert brand.brand_name == "Al-Andalus Parfums"
+    assert brand.brand_voice == "v"                      # the rest of the PDF still applies
+    assert any("Kingsman" in w for w in brand.warnings)
+
+
+def test_e11_manual_edit_can_rename_the_brand(tmp_path: Path):
+    brand = resolve_brand(OUD, brands_dir=tmp_path, manual_patch=BrandPatch(brand_name="New"))
+    assert brand.brand_name == "New"
+
+
+def test_e15_invalid_config_does_not_stop_generation(tmp_path: Path):
+    (tmp_path / "bad.json").write_text(
+        json.dumps({"brand_name": OUD.brand_name, "brand_colours": ["#000000"]}),
+        encoding="utf-8",
+    )
+    brand = resolve_brand(OUD, brands_dir=tmp_path)
+    assert brand.brand_voice == OUD.tone                 # fell back to the catalog
+    assert any("bad.json" in w for w in brand.warnings)
+
+
+# --- E12/E13/E14: image colours ---------------------------------------------- #
+
+def test_e12_transparent_pixels_of_a_cutout_are_ignored():
+    # Phase 5 passes background-removed PNGs; transparent pixels are (0,0,0,0).
+    img = Image.new("RGBA", (100, 100), (0, 0, 0, 0))
+    img.paste(Image.new("RGBA", (50, 50), (178, 34, 34, 255)), (25, 25))
+    colors = dominant_colors(img, count=2)
+    assert len(colors) == 1 and _close(colors[0], "#B22222")
+
+
+def test_e12_fully_transparent_image_gives_no_colours():
+    assert dominant_colors(Image.new("RGBA", (10, 10), (0, 0, 0, 0))) == []
+
+
+@pytest.mark.parametrize("count", [0, -1])
+def test_e13_non_positive_count_returns_nothing(count):
+    img = Image.new("RGB", (10, 10), "#B22222")
+    assert dominant_colors(img, count=count) == []
+
+
+def test_e13_tiny_and_all_white_images():
+    assert len(dominant_colors(Image.new("RGB", (1, 1), "#B22222"))) == 1
+    assert dominant_colors(Image.new("RGB", (50, 50), "#FFFFFF")) == []
+
+
+def test_e13_all_white_image_falls_back_to_the_default_palette(tmp_path: Path):
+    brand = resolve_brand(HEADPHONES, brands_dir=tmp_path,
+                          image=Image.new("RGB", (50, 50), "#FFFFFF"))
+    assert brand.brand_colors == DEFAULT_PALETTE and brand.sources[-1] == "default"
+
+
+@pytest.mark.parametrize("background, expected_text", [
+    ("#808080", "#111111"),   # mid grey: dark text has more contrast (4.8 vs 3.9)
+    ("#FBC601", "#111111"),   # yellow
+    ("#1A1A1A", "#FFFFFF"),   # near black
+    ("#0B1F3A", "#FFFFFF"),   # navy
+])
+def test_e14_text_colour_is_chosen_by_wcag_contrast(tmp_path: Path, background, expected_text):
+    brand = resolve_brand(HEADPHONES, brands_dir=tmp_path,
+                          image=Image.new("RGB", (40, 40), background))
+    assert brand.brand_colors[-1] == expected_text

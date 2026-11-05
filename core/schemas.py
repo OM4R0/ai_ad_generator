@@ -130,6 +130,7 @@ class BrandProfile(_Model):
     arabic_register: str = "msa_gulf"  # ADR-006
     logo_url: str | None = None
     sources: list[str] = Field(default_factory=list)  # audit: which sources filled it
+    warnings: list[str] = Field(default_factory=list)  # sources skipped or adjusted, and why
 
 
 class BrandPatch(_Model):
@@ -146,6 +147,12 @@ class BrandPatch(_Model):
     language: Language | None = None
     arabic_register: str | None = None
     logo_url: str | None = None
+
+    @field_validator("brand_colors", mode="before")
+    @classmethod
+    def _null_colours_mean_none(cls, v: object) -> object:
+        # LLMs and hand-written configs often send `"brand_colors": null`.
+        return [] if v is None else v
 
     @field_validator("language", mode="before")
     @classmethod
