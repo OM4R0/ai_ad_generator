@@ -205,3 +205,11 @@ def test_not_configured_raises_a_clear_error():
     client = LLMClient(_settings(llm_api_key=""), transport=httpx.MockTransport(FakeServer()))
     with pytest.raises(LLMError, match="LLM_API_KEY"):
         _ask(client)
+
+
+def test_503_backoff_gives_an_overloaded_model_time_to_recover():
+    # Live: three models answered 503 within seconds of each other.
+    server = FakeServer(httpx.Response(503), _reply('{"word": "ok", "count": 1}'))
+    client, sleeps = _client(server)
+    _ask(client)
+    assert sleeps and sleeps[0] >= 3

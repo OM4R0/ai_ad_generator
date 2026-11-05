@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 MAX_ATTEMPTS = 3            # per provider, for retryable errors
+BACKOFF_BASE_S = 3.0        # waits 3 s, then 6 s (live: 503 bursts last a few seconds)
 MAX_RETRY_AFTER_S = 60.0    # never wait longer than this for a 429
 IMAGE_MAX_SIDE = 1024       # images are downscaled before sending (fewer tokens)
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504}
@@ -163,7 +164,7 @@ class LLMClient:
             except _Retryable as exc:
                 last = exc
                 if attempt < MAX_ATTEMPTS - 1:
-                    wait = exc.wait_s if exc.wait_s is not None else 2.0 ** attempt
+                    wait = exc.wait_s if exc.wait_s is not None else BACKOFF_BASE_S * 2 ** attempt
                     logger.info("Retrying %s in %.1fs: %s", provider.model, wait, exc)
                     self._sleep(wait)
         assert last is not None

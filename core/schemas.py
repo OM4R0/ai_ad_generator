@@ -216,11 +216,9 @@ class Caption(_Model):
         return tags
 
 
-class AdCopy(_Model):
-    """Everything the copy engine produces for one product (→ copy.json)."""
+class AdCopyDraft(_Model):
+    """What the LLM writes. Language and direction are set by our code, not the model."""
 
-    language: Language
-    direction: Literal["ltr", "rtl"]
     variants: list[CopyVariant] = Field(min_length=2, max_length=2)
     carousel: list[CarouselCard] = Field(min_length=3, max_length=5)
     captions: dict[Platform, Caption]
@@ -239,6 +237,13 @@ class AdCopy(_Model):
         if len({variant.angle for variant in v}) != len(v):
             raise ValueError("the two A/B variants must use different angles")
         return v
+
+
+class AdCopy(AdCopyDraft):
+    """Everything the copy engine produces for one product (→ copy.json)."""
+
+    language: Language
+    direction: Literal["ltr", "rtl"]
 
     @model_validator(mode="after")
     def _direction_follows_language(self) -> "AdCopy":

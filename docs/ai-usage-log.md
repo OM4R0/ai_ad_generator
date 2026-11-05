@@ -105,3 +105,14 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **Live benchmark on my key** (ADR-003): `gemini-3.8-flash` was overloaded (timeouts, 503), `gemini-2.5-flash` returned 404 (retired for new users), and **`gemini-3.5-flash` worked**: valid JSON first try, 16–21 s, and it reported the headphones as **black**, solving the "yellow background" problem from Phase 2.
 - **The live run changed the code:** timeouts now skip to the next model (instead of 3 × 60 s), and a new `LLM_FALLBACK_MODELS` setting tries other Gemini models on the same key.
 - **Also found:** the Windows console can't print Arabic (cp1252), so the CLI must force UTF-8 output. Arabic products have their features written in Arabic in the catalog, which helps native Arabic copy.
+
+## Phase 4 — Copy engine
+
+- **Built test-first:** `core/copy_engine.py`, `config/prompt_templates/copy_v1.txt` → `copy_v2.txt`, and language guides `languages/{en,ar,fr,es,de}.md`. Each guide has its own **banned phrases** list, which is both injected into the prompt and used by a post-check. One copy call returns 2 A/B variants + the carousel + 4 platform captions. The LLM writes an `AdCopyDraft`; our code sets language/direction. If the LLM fails, `template_copy` writes plain copy from the catalog.
+- **First live run** (headphones EN, oud AR):
+  - Arabic copy was good: headlines with real facts ("ثبات يتجاوز 16 ساعة بتركيز 30%"), a genuine pain-point hook, and it used the photo analysis ("زجاجة كريستالية كحلية داكنة"). **To review myself:** "أسطوري" twice, mixed men's/women's hashtags.
+  - English: all 3 models answered 503 the first time → template fallback worked; a retry went through the whole fallback chain and succeeded on `gemini-3.5-flash-lite`.
+  - The cliché check caught "seamless" in the LinkedIn caption.
+- **The AI hallucinated a price:** "$149" while the catalog says "$129 – $189", despite a prompt rule against invented prices. **Response:** a stricter rule in `copy_v2` **and** a deterministic price fact-check that flags any $ amount not in the catalog. Lesson: a prompt rule is a request, not a guarantee; check the output in code.
+- Other fixes from the live run: hashtags duplicated inside the caption text are stripped; the last carousel card must be the CTA (v2); longer 503 backoff (3 s, 6 s).
+- **I also asked** for an honest assessment of my position before the interview. The AI pointed out that `interview-prep.md` had answers saying "I reviewed/wrote" for work the AI did. It was rewritten so it states accurately who did what.
