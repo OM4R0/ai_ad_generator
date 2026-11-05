@@ -60,3 +60,16 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **Bug found by the tests, not by eye:** in the `.xlsx`, the `Image URL` cells **display "View Photo 🔗"**, and the real URL is stored as the cell's *hyperlink*. pandas reads only the visible text, so every product had a broken URL. The CSV has the real URLs. **Fix:** read the hyperlink targets with openpyxl; a test now asserts that xlsx and csv give identical products.
 - **Why this matters:** a hidden data-quality issue in the provided input. Without the xlsx-vs-csv test it would only have shown up later as "image download failed".
 - **Design choices in the loader:** bad rows are skipped and reported, never fatal; the CSV is the fallback if the xlsx can't be read; non-URL links become `None` (the local image still works).
+
+### Code review of Phase 1
+- **Asked:** The AI to explain its weak points honestly. It listed 3; I asked it to fix them **and look for more**.
+- **Found and fixed 7 issues**, each with a regression test (18 → 35 tests):
+  1. The fallback caught *every* exception and could hide real bugs → now only file-read errors.
+  2. Image paths assumed the catalog lived in `data/` → now resolved against the project root.
+  3. A duplicate ID was reported as "row 0" → now the real row + where the ID was first seen.
+  4. An ID of `inf` **crashed the whole batch** (`OverflowError` wasn't caught), which contradicts the spec's "a bad row never stops the batch" → now a row error.
+  5. Blank rows were never dropped (`dropna` does nothing when empty cells are `""`) and would be reported as errors → now ignored, with row numbers still correct.
+  6. An empty value in `.env` (e.g. `LLM_BASE_URL=`) overrode the default with `""` → empty now means "use the default".
+  7. The contract accepted two A/B variants with the same angle and empty bullets; it trusted the LLM's text direction → now rejected / derived from the language.
+- **Lesson:** "tests pass" ≠ "no bugs". Issues 4 and 5 only showed up when I deliberately tested odd inputs.
+- **Also asked for:** `docs/interview-prep.md`, a study file with "what I must understand" + expected questions per phase, updated after each phase.

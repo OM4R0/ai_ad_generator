@@ -11,7 +11,14 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 # --------------------------------------------------------------------------- #
 # Primitive types
@@ -154,7 +161,7 @@ class CopyVariant(_Model):
     headline: str = Field(min_length=1)
     hook: str = Field(min_length=1)
     primary_text: str = Field(min_length=1)
-    bullets: list[str] = Field(min_length=3, max_length=3)
+    bullets: list[Annotated[str, Field(min_length=1)]] = Field(min_length=3, max_length=3)
     cta: str = Field(min_length=1)
 
 
@@ -194,6 +201,20 @@ class AdCopy(_Model):
         if missing:
             raise ValueError(f"missing captions for: {sorted(missing)}")
         return v
+
+    @field_validator("variants")
+    @classmethod
+    def _distinct_angles(cls, v: list[CopyVariant]) -> list[CopyVariant]:
+        if len({variant.angle for variant in v}) != len(v):
+            raise ValueError("the two A/B variants must use different angles")
+        return v
+
+    @model_validator(mode="after")
+    def _direction_follows_language(self) -> "AdCopy":
+        # Direction is derived from the language, never trusted from the LLM:
+        # an Arabic ad marked "ltr" would render backwards.
+        self.direction = self.language.direction
+        return self
 
 
 # --------------------------------------------------------------------------- #

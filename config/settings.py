@@ -16,7 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _env(name: str, default: str = "") -> str:
-    return os.getenv(name, default).strip()
+    """Read an env var; an empty value (e.g. `LLM_BASE_URL=` in .env) means 'use the default'."""
+    return os.getenv(name, "").strip() or default
 
 
 def _env_float(name: str, default: float) -> float:

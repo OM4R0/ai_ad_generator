@@ -65,3 +65,19 @@ def test_invalid_ad_copy_is_rejected(bad):
 def test_hashtags_are_cleaned():
     tags = Caption(text="t", hashtags=["oud", "#Luxury Scent", " "]).hashtags
     assert tags == ["#oud", "#LuxuryScent"]
+
+
+def test_direction_is_derived_from_language_not_trusted():
+    copy = AdCopy.model_validate(_copy(language="ar", direction="ltr"))
+    assert copy.direction == "rtl"
+
+
+def test_ab_variants_must_use_different_angles():
+    with pytest.raises(ValidationError, match="different angles"):
+        AdCopy.model_validate(_copy(variants=[_variant("emotional"), _variant("emotional")]))
+
+
+def test_empty_bullet_is_rejected():
+    bad = _variant("pain_point") | {"bullets": ["a", "", "c"]}
+    with pytest.raises(ValidationError):
+        AdCopy.model_validate(_copy(variants=[bad, _variant("emotional")]))
