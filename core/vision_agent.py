@@ -8,6 +8,7 @@ pipeline continues (NFR-2); the reason is returned in `fallback`.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -20,7 +21,8 @@ from core.schemas import CallUsage, Product, VisionAnalysis
 
 logger = logging.getLogger(__name__)
 
-VISION_PROMPT = "vision_v1"
+# v2 (2026-11-05): also reports visible_brands (the oud photo turned out to be a Chanel bottle)
+VISION_PROMPT = "vision_v2"
 VISION_TEMPERATURE = 0.2  # describing a photo: we want consistency, not creativity
 
 
@@ -76,3 +78,38 @@ def local_analysis(product: Product, image: Image.Image) -> VisionAnalysis:
         ),
         cutout_quality_hint="unknown",
     )
+
+
+def foreign_brands(analysis: VisionAnalysis, brand_name: str, product_name: str = "") -> list[str]:
+    """Brand text visible on the photo that is NOT the advertised brand or product.
+
+    A non-empty result means the reference photo shows another company's product
+    (e.g. "BLEU DE CHANEL" on the photo for Al-Andalus Parfums): fine for a demo,
+    not fine to publish. The pipeline reports it as a warning.
+    """
+    own = [_squash(brand_name), _squash(product_name)]
+    foreign = []
+    for text in analysis.visible_brands:
+        key = _squash(text)
+        if key and not any(o and (key in o or o in key) for o in own):
+            foreign.append(text)
+    return foreign
+
+
+def _squash(text: str) -> str:
+    """'Al-Andalus Parfums' → 'alandalusparfums' (case, spaces and punctuation ignored)."""
+    return re.sub(r"[\W_]+", "", text.casefold())
+
+
+def photo_warnings(analysis: VisionAnalysis, product: Product) -> list[str]:
+    """Human-readable warnings about the reference photo (shown in metadata + dashboard)."""
+    warnings = []
+    if not analysis.photo_matches_product:
+        shows = analysis.photo_shows or "a different item"
+        warnings.append(f"the photo shows {shows}, not the product ({product.name}); "
+                        "upload a correct photo before publishing")
+    others = foreign_brands(analysis, product.brand_name, product.name)
+    if others:
+        warnings.append(f"the photo shows another brand ({', '.join(others)}); "
+                        f"not publishable as a {product.brand_name} ad")
+    return warnings

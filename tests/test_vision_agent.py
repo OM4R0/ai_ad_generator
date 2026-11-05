@@ -73,3 +73,54 @@ def test_vision_prompt_asks_for_product_colours_not_background():
     system, _ = load_prompt(VISION_PROMPT, product_name="X", brand_name="B", category="C",
                             description="D", features="- f", tone="T")
     assert "background" in system.lower() and "product itself" in system.lower()
+
+
+# --- Found in the first live render: the oud photo is a Chanel bottle ------ #
+
+def test_vision_prompt_v2_asks_for_visible_brands():
+    from core.vision_agent import VISION_PROMPT as current
+
+    system, _ = load_prompt(current, product_name="X", brand_name="B", category="C",
+                            description="D", features="- f", tone="T")
+    assert current == "vision_v2" and "visible_brands" in system
+
+
+@pytest.mark.parametrize("visible, brand, expected", [
+    (["BLEU DE CHANEL", "Chanel"], "Al-Andalus Parfums", ["BLEU DE CHANEL", "Chanel"]),
+    (["AeroSonic"], "AeroSonic Audio", []),
+    (["al-andalus"], "Al-Andalus Parfums", []),
+    ([], "Any Brand", []),
+])
+def test_foreign_brands_on_the_photo_are_detected(visible, brand, expected):
+    from core.vision_agent import foreign_brands
+
+    analysis = GOOD.model_copy(update={"visible_brands": visible})
+    assert foreign_brands(analysis, brand) == expected
+
+
+# --- Found by looking at all 30 photos: ~2/3 show a different product ------ #
+
+def test_vision_prompt_v2_asks_whether_the_photo_matches_the_product():
+    from core.vision_agent import VISION_PROMPT as current
+
+    system, _ = load_prompt(current, product_name="X", brand_name="B", category="C",
+                            description="D", features="- f", tone="T")
+    assert "photo_matches_product" in system and "photo_shows" in system
+
+
+def test_photo_warnings_report_a_wrong_product_and_a_foreign_brand():
+    from core.vision_agent import photo_warnings
+
+    kettle = CATALOG.by_id(26)          # the catalog photo is an iced coffee
+    analysis = GOOD.model_copy(update={"photo_matches_product": False,
+                                       "photo_shows": "a plastic cup of iced coffee",
+                                       "visible_brands": ["Starbucks"]})
+    warnings = photo_warnings(analysis, kettle)
+    assert any("iced coffee" in w for w in warnings)
+    assert any("Starbucks" in w for w in warnings)
+
+
+def test_photo_warnings_are_empty_for_a_matching_unbranded_photo():
+    from core.vision_agent import photo_warnings
+
+    assert photo_warnings(GOOD, HEADPHONES) == []

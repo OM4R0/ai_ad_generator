@@ -178,6 +178,13 @@ class VisionAnalysis(_Model):
     visual_selling_points: list[str] = Field(default_factory=list)
     scene_prompt: str = ""
     cutout_quality_hint: Literal["clean", "busy background", "unknown"] = "unknown"
+    # Brand names/logos printed on the product in the photo (to catch photos of
+    # another brand's product, e.g. the catalog's oud photo is a Chanel bottle).
+    visible_brands: list[str] = Field(default_factory=list)
+    # Does the photo show the catalog product at all? (~2/3 of the reference photos don't:
+    # e.g. an iced coffee for a kettle, a blender for an air fryer.)
+    photo_matches_product: bool = True
+    photo_shows: str = ""
 
 
 # --------------------------------------------------------------------------- #

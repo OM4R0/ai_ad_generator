@@ -125,3 +125,15 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **I told the AI honestly:** it was writing everything, I wasn't reviewing the code, and I didn't feel prepared. I asked for (1) a check for errors and contradictions, test-first, and (2) real help preparing.
 - **Review result:** 7 tests written first, all failed → 5 code issues fixed. The important one: `design.md` said brand colours come from the vision analysis before the raw photo pixels, but the code had no way to receive them (C1), so Phase 5 would have brought back the "yellow headphones". Plus 6 places where the docs contradicted the code (e.g. an unused `tenacity` dependency) → fixed. Details: `docs/edge-cases.md`.
 - **Learning:** the AI wrote `docs/code-map.md`: one pipeline diagram, a table of every file (input → output → key function → where to edit), a cheat sheet of only the library calls we use, and **hands-on exercises** (break one rule → watch the right test fail → `git restore`). The AI ran every exercise itself first to make sure the described failure really happens.
+
+## Phase 5 — Visuals
+
+- **Built test-first:** `core/text_render.py` (bundled fonts, Arabic shaping + RTL, fitting text into a box), `core/image_source.py` (upload → URL → local → catalog URL), `core/scene_generator.py` (Pollinations + cache + brand-gradient fallback), `core/visual_engine.py` (cut-out, feed A/B, story, carousel). Fonts: Poppins + IBM Plex Sans Arabic (OFL), in `assets/fonts/`.
+- **Arabic:** Pillow on Windows has no `raqm`, so Arabic would have rendered as disconnected, reversed letters. `arabic-reshaper` + `python-bidi` fix it, with Pillow's BASIC layout forced so every machine renders the same.
+- **Live render** (headphones EN, oud AR) and what it revealed:
+  - Arabic renders correctly (joined, RTL, right-aligned; numbers inside Arabic are fine).
+  - Pollinations gave one image, then HTTP 402; its free image had a watermark → crop added; gradient fallback improved.
+  - A yellow halo around the cut-out → edge cleanup.
+  - **The oud photo is a Chanel bottle.** The AI then put all 30 reference photos on contact sheets and found that only ~10 show the right product; the others show a different item or another brand. → The vision prompt (v2) now reports `photo_matches_product`, `photo_shows`, `visible_brands`, and these become warnings.
+- **TDD lesson:** two new tests passed before any code change. Instead of accepting that, the AI checked them: both were testing the wrong thing (a gradient that is naturally darker at the top; a fringe too transparent to matter). Fixed the tests to match the real render, watched them fail, then fixed the code.
+- **Decisions waiting for me:** which 10 products to demo, and whether to keep gradient backgrounds or get an image-service token.

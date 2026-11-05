@@ -27,3 +27,9 @@ None of them is production-grade.
 ## Consequences
 - Scene images are cached (design §9), so regenerating the copy doesn't regenerate the backgrounds.
 - If a watermark appears, the composition crops/covers the corner, or we fall back to the gradient. To be checked in Phase 5.
+
+## Live result (Phase 5, 2026-11-05)
+- Anonymous Pollinations returned **one** image, then **HTTP 402** (payment required) for every following request.
+- The free image had a **"pollinations.ai" watermark** in the bottom-right corner → we now request a 10 % taller image and crop the bottom strip.
+- The gradient fallback worked automatically, and was improved (a soft "studio light" glow behind the product), because it will be the common case.
+- **Open question for the owner:** keep gradients only (reliable, no account), get a free Pollinations token, or add a second provider (Cloudflare Workers AI, free account). See the Phase 5 hand-off.

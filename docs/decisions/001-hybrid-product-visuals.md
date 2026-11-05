@@ -26,3 +26,8 @@ Use a hybrid pipeline:
 - The product is always 100% authentic. The creativity goes into the scene, layout, and copy.
 - Adds a background-removal dependency (one model download of roughly 170 MB on first run).
 - Background removal quality varies with the photo. The vision step can flag poor cut-outs.
+
+## Finding (Phase 5, 2026-11-05)
+The hybrid approach assumes the reference photo shows the product. Looking at all 30 photos, **only about a third do**: others show a different item (an iced coffee for the kettle, a blender for the air fryer) or another company's product (Chanel, Nike, Clinique, Dolce & Gabbana). The brief calls the photos "reference only" for this reason.
+- The vision step now reports `photo_matches_product`, `photo_shows` and `visible_brands` (same request, no extra cost), and the pipeline turns them into warnings.
+- Which photos to use for the demo is an owner decision (matching products vs. uploading correct photos).
