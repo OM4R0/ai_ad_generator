@@ -14,8 +14,21 @@ Budget is $0. The owner has a **Google Gemini API key** (Google AI Studio free t
 3. **One client for both.** Gemini and OpenRouter both expose an **OpenAI-compatible chat endpoint**, so `llm_client.py` speaks one protocol and the provider is just `base_url + api_key + model` in `.env`. Switching provider = changing config, not code.
 4. `VISION_MODEL` and `COPY_MODEL` are separate settings. If the single model is weak at Arabic copy, we switch `COPY_MODEL` to a second model (owner's rule: "start with one; go to two if it isn't good enough").
 
-## Phase 3 benchmark
-Run the same 2 products (1 EN, 1 AR) and score: JSON validity, Arabic naturalness (judged by the owner), use of concrete facts, cliché count, latency. Record the scores here.
+## Phase 3 benchmark (vision step) — 2026-11-05
+Same 2 products (headphones #13 EN, oud #10 AR) with the `vision_v1` prompt, on the owner's key:
+
+| Model | Result | Latency | JSON valid 1st try | Product colours (not background) |
+|---|---|---|---|---|
+| `gemini-3.8-flash` (newest) | ❌ timeout (60 s), then HTTP 503 "overloaded" | — | — | — |
+| `gemini-2.5-flash` | ❌ HTTP 404 "no longer available to new users" | — | — | — |
+| **`gemini-3.5-flash`** | ✅ | 16–21 s | ✅ both | ✅ headphones `#1C1D21` (black), not the yellow background |
+
+**Chosen:** `gemini-3.5-flash` as `VISION_MODEL` (and `COPY_MODEL`, via DD-2). `gemini-3.8-flash` and `gemini-3.5-flash-lite` are listed in `LLM_FALLBACK_MODELS` (same key). Copy quality is checked in Phase 4; if the Arabic copy isn't good enough, `COPY_MODEL` is switched on its own.
+
+**What the benchmark changed in the code:**
+- A timeout now moves on to the next model immediately (3 × 60 s retries on an overloaded model wasted 3 minutes).
+- New setting `LLM_FALLBACK_MODELS`: other models on the **same** key, tried before the other provider.
+- The live run proved the fallback path works: when every model failed, the local analysis kicked in and the pipeline continued.
 
 ## Alternatives rejected
 | Option | Why rejected |

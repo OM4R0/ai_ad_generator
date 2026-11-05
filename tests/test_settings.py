@@ -8,7 +8,7 @@ from config.settings import Settings
 
 ENV_VARS = (
     "LLM_BASE_URL", "LLM_API_KEY", "VISION_MODEL", "COPY_MODEL", "IMAGE_PROVIDER",
-    "LLM_TIMEOUT_S", "FALLBACK_MODELS", "CATALOG_PATH",
+    "LLM_TIMEOUT_S", "FALLBACK_MODELS", "CATALOG_PATH", "LLM_FALLBACK_MODELS",
 )
 
 
@@ -50,3 +50,8 @@ def test_bad_number_gives_a_clear_error(monkeypatch, clean_env):
 def test_fallback_models_list(monkeypatch, clean_env):
     monkeypatch.setenv("FALLBACK_MODELS", "a:free, b:free ,,")
     assert Settings.from_env(clean_env).fallback_models == ["a:free", "b:free"]
+
+
+def test_same_provider_fallback_models_list(monkeypatch, clean_env):
+    monkeypatch.setenv("LLM_FALLBACK_MODELS", "gemini-a, gemini-b")
+    assert Settings.from_env(clean_env).llm_fallback_models == ["gemini-a", "gemini-b"]

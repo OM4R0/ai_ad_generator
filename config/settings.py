@@ -50,6 +50,8 @@ class Settings:
     llm_api_key: str = ""
     vision_model: str = ""
     copy_model: str = ""
+    # Other models on the SAME provider/key, tried in order if the main one fails
+    llm_fallback_models: list[str] = field(default_factory=list)
 
     # Fallback LLM provider (optional)
     fallback_base_url: str = "https://openrouter.ai/api/v1"
@@ -80,6 +82,7 @@ class Settings:
             llm_api_key=_env("LLM_API_KEY"),
             vision_model=vision_model,
             copy_model=_env("COPY_MODEL") or vision_model,  # one model by default (DD-2)
+            llm_fallback_models=_env_list("LLM_FALLBACK_MODELS"),
             fallback_base_url=_env("FALLBACK_BASE_URL", defaults.fallback_base_url),
             fallback_api_key=_env("FALLBACK_API_KEY"),
             fallback_models=_env_list("FALLBACK_MODELS"),
