@@ -126,6 +126,8 @@ class CampaignResult:                               # → metadata.json
     prompt_versions: dict[str, str]; created_at: datetime
 ```
 
+The LLM returns an `AdCopyDraft` (variants, carousel, captions); our code adds `language` and `direction` to make the `AdCopy`, so the text direction is never trusted from the model.
+
 `copy.json` = `AdCopy` serialised. `metadata.json` = `CampaignResult` minus the copy text.
 
 ## 5. Per-product flow & call budget
@@ -150,12 +152,12 @@ class CampaignResult:                               # → metadata.json
 
 ## 6. Prompt strategy
 
-Templates live in `config/prompt_templates/` as plain text files with placeholders, and are **versioned in the filename** (`copy_v1.txt`). The version used is written to `metadata.json`, so a change in output quality can be traced to the prompt change that caused it.
+Templates live in `config/prompt_templates/` as plain text files with placeholders, and are **versioned in the filename** (`copy_v2.txt`; old versions are kept for history). The version used is written to `metadata.json`, so a change in output quality can be traced to the prompt change that caused it.
 
 ```
 prompt_templates/
 ├── vision_v1.txt              system + user prompt for VisionAnalysis
-├── copy_v1.txt                system + user prompt for AdCopy
+├── copy_v1.txt / copy_v2.txt  system + user prompt for the ad copy (v2 is active)
 ├── brand_pdf_v1.txt           PDF text → BrandProfile
 └── languages/
     ├── en.md                  style notes, banned phrases, platform norms
@@ -195,7 +197,8 @@ Prompt design principles (from spec §8):
 
 | Failure | Detection | Response |
 |---|---|---|
-| Timeout / 5xx / 429 | HTTP status, timeout | exponential backoff (max 3 tries); for 429, wait for `Retry-After` |
+| 5xx / 429 / connection reset | HTTP status, transport error | backoff 3 s → 6 s (max 3 tries); for 429, wait for `Retry-After` (clamped to 0–60 s) |
+| Timeout | no reply within `LLM_TIMEOUT_S` | move to the next model at once (an overloaded model tends to time out again; found in the Phase 3 benchmark) |
 | Free model unavailable | 404 / provider error | next model in the fallback list (OpenRouter `models` array) |
 | Invalid JSON | Pydantic validation | 1 repair retry with the error message included in the prompt |
 | Daily cap reached | 429 + quota message | stop the LLM calls for the batch, finish the remaining products from cache/templates, report this clearly |
@@ -221,6 +224,7 @@ COPY_MODEL=              # same as VISION_MODEL unless the benchmark says otherw
 FALLBACK_BASE_URL=https://openrouter.ai/api/v1
 FALLBACK_API_KEY=
 FALLBACK_MODELS=         # comma-separated :free model IDs
+LLM_FALLBACK_MODELS=     # other models on the PRIMARY key, tried first (e.g. gemini-3.8-flash)
 
 IMAGE_PROVIDER=pollinations   # ADR-007
 LLM_TIMEOUT_S=60
@@ -236,7 +240,7 @@ REFERENCE_PRICE_PER_MTOK=     # for the "equivalent paid cost" display (FR-14)
 |---|---|
 | `pandas`, `openpyxl` | read the xlsx/csv catalog |
 | `pydantic` | typed contracts + LLM output validation |
-| `httpx`, `tenacity` | HTTP with timeouts; retry/backoff policy |
+| `httpx` | HTTP with timeouts (the retry/backoff policy is our own ~40 lines in `llm_client.py`, so it is testable and needs no extra library) |
 | `python-dotenv` | `.env` config |
 | `Pillow` | composition, text rendering, mockups |
 | `rembg` (+ `onnxruntime`) | local background removal |

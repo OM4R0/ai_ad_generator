@@ -81,6 +81,22 @@ class LLMClient:
         )
         self._last_request_at: float | None = None
 
+    # ------------------------------------------------------------- lifecycle
+
+    def close(self) -> None:
+        """Close the HTTP connection pool."""
+        self._http.close()
+
+    @property
+    def closed(self) -> bool:
+        return self._http.is_closed
+
+    def __enter__(self) -> "LLMClient":
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        self.close()
+
     # ------------------------------------------------------------------ public
 
     def complete_json(
@@ -195,10 +211,16 @@ class LLMClient:
         if response.status_code >= 400:
             raise _Fatal(f"HTTP {response.status_code}: {response.text[:300]}")
 
-        payload = response.json()
-        tokens = payload.get("usage") or {}
-        usage.prompt_tokens += int(tokens.get("prompt_tokens") or 0)
-        usage.completion_tokens += int(tokens.get("completion_tokens") or 0)
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise _Retryable(f"response is not JSON: {response.text[:200]}") from exc
+        if not isinstance(payload, dict):
+            raise _Retryable(f"unexpected response body: {str(payload)[:200]}")
+        tokens = payload.get("usage")
+        if isinstance(tokens, dict):  # usage is informative: never lose an answer over it
+            usage.prompt_tokens += _as_int(tokens.get("prompt_tokens"))
+            usage.completion_tokens += _as_int(tokens.get("completion_tokens"))
         try:
             content = payload["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
@@ -266,8 +288,16 @@ def image_to_data_url(image: Image.Image) -> str:
 
 
 def _retry_after(response: httpx.Response) -> float | None:
+    """Seconds to wait from a Retry-After header, clamped to [0, MAX_RETRY_AFTER_S]."""
     raw = response.headers.get("Retry-After")
     try:
-        return min(float(raw), MAX_RETRY_AFTER_S) if raw else None
-    except ValueError:
+        return max(0.0, min(float(raw), MAX_RETRY_AFTER_S)) if raw else None
+    except ValueError:  # e.g. an HTTP date: fall back to our own backoff
         return None
+
+
+def _as_int(value: object) -> int:
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return 0

@@ -374,8 +374,12 @@ def resolve_brand(
     pdf_patch: BrandPatch | None = None,
     manual_patch: BrandPatch | None = None,
     image: Image.Image | None = None,
+    vision_colors: list[str] | None = None,
 ) -> BrandProfile:
     """Build the final BrandProfile for a product (spec §4.2 resolution order).
+
+    If no source provided colours, they are filled from (design.md §5):
+    the vision model's product colours → the photo's pixels → DEFAULT_PALETTE.
 
     Never raises because of a bad brand source: an invalid config file is
     skipped, and anything skipped or adjusted is recorded in `warnings`.
@@ -397,7 +401,7 @@ def resolve_brand(
             brand = apply_patch(brand, patch, source)
 
     if not brand.brand_colors:
-        brand = _fill_colors(brand, image)
+        brand = _fill_colors(brand, image, vision_colors or [])
     for warning in warnings:
         logger.warning("%s: %s", product.brand_name, warning)
     return brand.model_copy(update={"warnings": [*brand.warnings, *warnings]})
@@ -419,9 +423,15 @@ def _keep_product_brand_name(
     return patch
 
 
-def _fill_colors(brand: BrandProfile, image: Image.Image | None) -> BrandProfile:
-    colors = dominant_colors(image, count=2) if image is not None else []
-    if colors:
-        palette = [*colors, text_color_for(colors[0])]
-        return apply_patch(brand, BrandPatch(brand_colors=palette), source="image")
+def _fill_colors(
+    brand: BrandProfile, image: Image.Image | None, vision_colors: list[str]
+) -> BrandProfile:
+    # The vision model sees the product itself; raw pixels may describe the background.
+    for source, colors in (
+        ("vision", vision_colors[:2]),
+        ("image", dominant_colors(image, count=2) if image is not None else []),
+    ):
+        if colors:
+            palette = [*colors, text_color_for(colors[0])]
+            return apply_patch(brand, BrandPatch(brand_colors=palette), source=source)
     return apply_patch(brand, BrandPatch(brand_colors=DEFAULT_PALETTE), source="default")

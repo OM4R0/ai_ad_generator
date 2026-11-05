@@ -213,3 +213,33 @@ def test_503_backoff_gives_an_overloaded_model_time_to_recover():
     client, sleeps = _client(server)
     _ask(client)
     assert sleeps and sleeps[0] >= 3
+
+
+# --- Consistency review (C3-C5): crashes that escaped the error handling --- #
+
+def test_c3_a_non_object_response_body_is_an_llm_error_not_a_crash():
+    server = FakeServer(*[httpx.Response(200, json=[1, 2, 3]) for _ in range(3)])
+    client, _ = _client(server)
+    with pytest.raises(LLMError):
+        _ask(client)
+
+
+def test_c3_malformed_usage_field_does_not_lose_a_valid_answer():
+    body = {"choices": [{"message": {"content": '{"word": "ok", "count": 1}'}}], "usage": "n/a"}
+    client, _ = _client(FakeServer(httpx.Response(200, json=body)))
+    answer, usage = _ask(client)
+    assert answer.word == "ok" and usage.prompt_tokens == 0
+
+
+def test_c4_negative_retry_after_never_means_a_negative_sleep():
+    server = FakeServer(httpx.Response(429, headers={"Retry-After": "-5"}),
+                        _reply('{"word": "ok", "count": 1}'))
+    client, sleeps = _client(server)
+    _ask(client)
+    assert sleeps and all(s >= 0 for s in sleeps)
+
+
+def test_c5_client_closes_its_http_connection():
+    with LLMClient(_settings(), transport=httpx.MockTransport(FakeServer())) as client:
+        assert not client.closed
+    assert client.closed

@@ -120,22 +120,25 @@ def template_copy(product: Product, brand: BrandProfile) -> AdCopy:
     """Plain, valid copy built only from catalog fields (no LLM)."""
     language = brand.language
     cta = CTA_BY_LANGUAGE[language]
-    bullets = (product.features + [product.usp] * 3)[:3]
+    # The last-resort fallback must never fail, even on a sparse catalog row.
+    usp = product.usp or product.name
+    description = product.description or usp
+    bullets = (product.features + [usp] * 3)[:3]
     hashtags = [_hashtag(brand.brand_name), _hashtag(product.category)]
 
     variants = [
-        CopyVariant(angle="pain_point", headline=product.usp, hook=product.usp[:HOOK_MAX_CHARS],
-                    primary_text=product.description, bullets=bullets, cta=cta),
+        CopyVariant(angle="pain_point", headline=usp, hook=usp[:HOOK_MAX_CHARS],
+                    primary_text=description, bullets=bullets, cta=cta),
         CopyVariant(angle="emotional", headline=product.name,
-                    hook=product.description[:HOOK_MAX_CHARS],
-                    primary_text=f"{product.description} {product.usp}", bullets=bullets, cta=cta),
+                    hook=description[:HOOK_MAX_CHARS],
+                    primary_text=f"{description} {usp}", bullets=bullets, cta=cta),
     ]
     carousel = (
-        [CarouselCard(title=product.usp, body=product.name)]
+        [CarouselCard(title=usp, body=product.name)]
         + [CarouselCard(title=f, body="") for f in product.features[:3]]
         + [CarouselCard(title=cta, body=brand.brand_name)]
     )
-    caption = Caption(text=f"{product.usp}\n\n{product.description}", hashtags=hashtags)
+    caption = Caption(text=f"{usp}\n\n{description}", hashtags=hashtags)
     return AdCopy(language=language, direction=language.direction, variants=variants,
                   carousel=carousel, captions={p: caption for p in PLATFORMS})
 

@@ -413,3 +413,22 @@ def test_e14_text_colour_is_chosen_by_wcag_contrast(tmp_path: Path, background, 
     brand = resolve_brand(HEADPHONES, brands_dir=tmp_path,
                           image=Image.new("RGB", (40, 40), background))
     assert brand.brand_colors[-1] == expected_text
+
+
+# =========================================================================== #
+# Consistency review (C1): design.md §5 says colours come from the vision
+# analysis BEFORE the raw photo pixels, but resolve_brand had no way to use them.
+# =========================================================================== #
+
+def test_c1_vision_colours_come_before_raw_photo_pixels(tmp_path: Path):
+    with Image.open(HEADPHONES.image_path) as photo:   # black headphones, yellow background
+        brand = resolve_brand(HEADPHONES, brands_dir=tmp_path, image=photo,
+                              vision_colors=["#1C1D21", "#C8C9CE"])
+    assert brand.brand_colors == ["#1C1D21", "#C8C9CE", "#FFFFFF"]
+    assert brand.sources[-1] == "vision"
+
+
+def test_c1_config_colours_still_beat_vision_colours():
+    brand = resolve_brand(OUD, vision_colors=["#123456"])   # real config/brands/ folder
+    assert brand.brand_colors == ["#1A1A1A", "#D4AF37", "#FFFFFF"]
+    assert "vision" not in brand.sources

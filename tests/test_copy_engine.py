@@ -189,3 +189,12 @@ def test_price_check_understands_european_and_arabic_formats(text, flagged):
     draft = _draft(variants=[_variant("pain_point") | {"headline": text}, _variant("emotional")])
     result = _generate(HEADPHONES, FakeClient(result=draft))     # catalog: $129 – $189
     assert any("price" in w for w in result.warnings) is flagged
+
+
+# --- Consistency review (C2): the last-resort fallback must never fail ----- #
+
+def test_c2_template_copy_survives_empty_catalog_text():
+    product = OUD.model_copy(update={"usp": "", "description": ""})
+    copy = template_copy(product, resolve_brand(product))
+    for variant in copy.variants:
+        assert variant.headline and variant.hook and variant.primary_text
