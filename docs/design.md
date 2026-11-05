@@ -133,7 +133,7 @@ class CampaignResult:                               # → metadata.json
 | Step | Input | Output | External calls | Fallback if it fails |
 |---|---|---|---|---|
 | Load row | xlsx | `Product` | 0 | skip row, log error |
-| Brand | row + config/PDF/edits | `BrandProfile` | 0 (PDF: 1 per upload) | catalog-derived defaults; colours from the image |
+| Brand | row + config/PDF/edits | `BrandProfile` | 0 (PDF: 1 per upload) | catalog-derived defaults; missing colours: vision colours → cut-out → raw photo → default palette (see note) |
 | Image | path / URL / upload | PIL image | 0–1 HTTP | URL → local → error for this product only |
 | Vision | image + product | `VisionAnalysis` | **1 LLM** | local colour extraction + catalog text only |
 | Copy | product + brand + vision | `AdCopy` | **1 LLM** | 1 repair retry → next model → template-based copy from catalog fields |
@@ -142,7 +142,9 @@ class CampaignResult:                               # → metadata.json
 | Compose | everything above | PNGs | 0 | — |
 | Write | `CampaignResult` | files | 0 | — |
 
-**Budget:** 2 OpenRouter calls per product → 10 products = 20 calls (the free daily cap is 50). Cached results cost 0 on reruns.
+**Note: the reference photos are lifestyle shots, not white studio shots** (found in Phase 2; e.g. black headphones on a bright-yellow background). Colours taken from the raw photo therefore describe the *background*, not the product. Hence the colour fallback order above: the vision model's product colours (Phase 3) and the background-removed cut-out (Phase 5) come before the raw photo. This also makes background-removal quality more important than first assumed (ADR-001).
+
+**Budget:** 2 LLM calls per product → 10 products = 20 calls (the free daily cap is 50). Cached results cost 0 on reruns.
 
 **Why one copy call returns everything** (both variants, carousel, captions): it keeps the call count at 2 and keeps the copy consistent across formats. The cost is a larger JSON response, which is handled by schema validation + one repair retry.
 

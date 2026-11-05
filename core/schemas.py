@@ -132,6 +132,30 @@ class BrandProfile(_Model):
     sources: list[str] = Field(default_factory=list)  # audit: which sources filled it
 
 
+class BrandPatch(_Model):
+    """A partial brand profile from one source (config file, PDF, manual edit).
+
+    Every field is optional; blank values mean "not provided" and never erase
+    what an earlier source set (see `brand_manager.apply_patch`).
+    """
+
+    brand_name: str | None = None
+    brand_voice: str | None = None
+    brand_colors: list[HexColor] = Field(default_factory=list, max_length=6)
+    target_market: str | None = None
+    language: Language | None = None
+    arabic_register: str | None = None
+    logo_url: str | None = None
+
+    @field_validator("language", mode="before")
+    @classmethod
+    def _parse_language(cls, v: object) -> object:
+        # Config files and LLMs write "Arabic" as often as "ar".
+        if isinstance(v, str):
+            return Language.parse(v) if v.strip() else None
+        return v
+
+
 # --------------------------------------------------------------------------- #
 # [3] Vision
 # --------------------------------------------------------------------------- #

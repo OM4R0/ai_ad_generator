@@ -17,8 +17,9 @@ onnxruntime>=1.18
 arabic-reshaper>=3.0
 python-bidi>=0.4.2
 
-# Brand PDF
+# Brand PDF + YAML brand configs
 pypdf>=4.2
+PyYAML>=6.0
 
 # Dashboard
 streamlit>=1.36
