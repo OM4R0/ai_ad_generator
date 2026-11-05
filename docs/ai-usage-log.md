@@ -120,3 +120,8 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 ### Trying it myself
 - **Asked:** "How do I try it myself?" There was no CLI yet, so the AI added `scripts/try_copy.py` (one product → photo analysis + copy, printed and saved to `.cache/try/`).
 - **First run of the script (product #5, French silk shirt)** revealed a gap in the price fact-check: it only understood "$190", not the "190 $" order used in French/Spanish/German (or "149 دولار" in Arabic). The prices in that ad were correct, but a wrong one in that format would have slipped through. Fixed test-first (7 format cases).
+
+### Consistency review + "I don't understand the code yet"
+- **I told the AI honestly:** it was writing everything, I wasn't reviewing the code, and I didn't feel prepared. I asked for (1) a check for errors and contradictions, test-first, and (2) real help preparing.
+- **Review result:** 7 tests written first, all failed → 5 code issues fixed. The important one: `design.md` said brand colours come from the vision analysis before the raw photo pixels, but the code had no way to receive them (C1), so Phase 5 would have brought back the "yellow headphones". Plus 6 places where the docs contradicted the code (e.g. an unused `tenacity` dependency) → fixed. Details: `docs/edge-cases.md`.
+- **Learning:** the AI wrote `docs/code-map.md`: one pipeline diagram, a table of every file (input → output → key function → where to edit), a cheat sheet of only the library calls we use, and **hands-on exercises** (break one rule → watch the right test fail → `git restore`). The AI ran every exercise itself first to make sure the described failure really happens.
