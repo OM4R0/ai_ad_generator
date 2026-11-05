@@ -39,3 +39,15 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
   - Moved the catalog files into `data/` to keep the repo root tidy.
   - Accepted D-1, D-2, D-4, D-6 as recommended. D-3 is deferred to a live model benchmark (ADR-003).
 - **AI research:** Checked OpenRouter's free-tier limits (third-party sources: 20/min, 50/day under $10 of credits). This led to a new design constraint: **at most 2 LLM calls per product + caching** (NFR-7).
+
+### 1.6 Design document
+- **Asked:** "How many models do we need? Isn't it one for text and one for images?"
+- **AI answer:** Two external models + one local one. (1) One **multimodal LLM** does both vision and copy (configurable as two separate models). (2) An **image generator** paints only the background scene. (3) A small **local background remover** (no API). Image-generator calls don't count against the OpenRouter cap.
+- **AI research:** Free image-generation options (late 2026): Pollinations (FLUX, no key, rate-limited), Cloudflare Workers AI (free account), Hugging Face (tiny free credit). No free option is production-grade, which is another reason for the gradient fallback.
+- **AI drafted:** `docs/design.md` (pipeline, data contracts, call budget, prompt strategy, layout/RTL approach, error handling, caching, dependencies, tests, phases).
+- **My decision:** Asked for each design question to be re-explained with a concrete example (the Oud perfume), then accepted DD-1..DD-4.
+
+### 1.7 Switching the LLM provider to Gemini
+- **Context:** I have a Gemini API key.
+- **My decision:** Use Gemini as the primary provider. Start with **one model** for vision + copy; move to two models only if the quality isn't good enough.
+- **AI proposal (accepted):** Keep OpenRouter as a fallback, and use Gemini's **OpenAI-compatible endpoint** so a single client serves both providers and switching is config-only. The AI also flagged that Gemini's free-tier limits are reported inconsistently online (from ~1,500/day down to ~20/day), so they must be checked on my own key in Phase 3 (ADR-003, ADR-007).

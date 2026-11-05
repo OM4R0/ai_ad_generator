@@ -1,6 +1,6 @@
 # Spec — AI Ad Generation Workflow
 
-> **Status:** v0.2 — decisions D-1, D-2, D-4, D-5, D-6 accepted by owner; D-3 pending Phase 3
+> **Status:** v0.3 — all decisions D-1..D-6 accepted by owner
 > **Owner:** Omar
 > **Source brief:** [brief.md](brief.md)
 > **Process:** Spec-Driven Development. This spec is the contract. Code is written *against* it, and any change in scope is made here first, then in code.
@@ -139,7 +139,7 @@ Each requirement has acceptance criteria (AC) that we can test.
 
 | ID | Requirement |
 |---|---|
-| **NFR-1 Zero cost** | Must run end-to-end on free tiers (OpenRouter `:free` models + free image services + local libraries). Paid models are optional and enabled only through config. |
+| **NFR-1 Zero cost** | Must run end-to-end on free tiers (Gemini free tier, with OpenRouter `:free` models as the fallback + free image services + local libraries). Paid models are optional and enabled only through config. |
 | **NFR-2 Resilience** | Every external call has a timeout, retries, and a defined fallback. **A failing AI service downgrades quality but never stops the pipeline.** Every fallback is recorded in `metadata.json`. |
 | **NFR-3 Swappable providers** | Model names and endpoints are set in `.env`/config, never hardcoded, because free model availability changes. |
 | **NFR-4 Structured LLM output** | All LLM responses are JSON validated against a schema, with retry on invalid output. |
@@ -167,7 +167,7 @@ This bar is enforced in the prompts and checked when we review the outputs.
 
 ## 10. Constraints & assumptions
 
-- Budget: **$0**. LLM access via OpenRouter free models. Reported limits: 20 req/min; 50 req/day under $10 of lifetime credit purchases, 1,000/day at $10 or more (to be verified on our key in Phase 3). At 2 calls per product, 50/day covers ~25 products per day.
+- Budget: **$0**. LLM access via the Gemini free tier (primary) and OpenRouter free models (fallback). Free-tier limits are unstable and to be verified on our keys in Phase 3 (ADR-003). At 2 calls per product, the 10-product demo needs 20 calls.
 - Priority order: **English first, then Arabic**, then FR/ES/DE (we get the other languages almost for free once the pipeline is generic).
 - Platform: developed on Windows / Python 3.13.
 
@@ -179,7 +179,7 @@ Full reasoning and rejected alternatives are in [`decisions/`](decisions/README.
 |---|---|---|---|
 | **D-1** | Hybrid visuals: real photo, background removed, AI-generated scene, composited; gradient fallback | [001](decisions/001-hybrid-product-visuals.md) | Accepted |
 | **D-2** | Streamlit dashboard | [002](decisions/002-streamlit-dashboard.md) | Accepted |
-| **D-3** | Text/vision model chosen by a live benchmark of OpenRouter free models | [003](decisions/003-llm-model-selection.md) | Proposed (Phase 3) |
+| **D-3** | Gemini direct as the primary LLM (one multimodal model), OpenRouter free models as the fallback; model ID confirmed by benchmark | [003](decisions/003-llm-model-selection.md) | Accepted |
 | **D-4** | CLI overwrites; dashboard keeps variants in its session | [004](decisions/004-rerun-behaviour.md) | Accepted |
 | **D-5** | Support all catalog languages, focus quality on EN + AR; start with 10 products, scale to 30 later if the limits allow | [005](decisions/005-languages-and-demo-scope.md) | Accepted |
 | **D-6** | Arabic register: MSA with a light Gulf flavour | [006](decisions/006-arabic-register.md) | Accepted |

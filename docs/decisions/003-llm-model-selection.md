@@ -1,21 +1,29 @@
-# ADR-003 — LLM selection (text + vision)
+# ADR-003 — LLM provider and model selection (text + vision)
 
-- **Status:** Proposed — final choice in Phase 3
-- **Spec ref:** D-3, NFR-1, NFR-3, NFR-7
+- **Status:** Accepted (provider) — 2026-11-05 · Model ID confirmed by benchmark in Phase 3
+- **Spec ref:** D-3, NFR-1, NFR-3, NFR-7 · design DD-2
 
 ## Context
-Budget is $0, so we use OpenRouter `:free` models. Free models rotate and get rate-limited at peak hours. Published limits as of late 2026 (third-party sources, to be verified against our key with `GET /api/v1/key`):
-- **20 requests/minute** on free models
-- **50 requests/day** on accounts with under $10 of lifetime credit purchases; **1,000/day** at $10 or more (reported as a permanent unlock)
+Budget is $0. The owner has a **Google Gemini API key** (Google AI Studio free tier). Free-tier limits change without notice and third-party sources disagree; they are to be confirmed on our own key/dashboard:
+- **Gemini (AI Studio, free):** Flash / Flash-Lite models free; reported limits range from ~15 req/min and ~1,500 req/day down to ~20 req/day after a Dec 2025 cut. Limits are per Google Cloud project and reset at midnight Pacific time.
+- **OpenRouter `:free`:** 20 req/min; 50 req/day under $10 of lifetime credit purchases, 1,000/day at $10 or more.
 
-## Decision (process, not model)
-1. Benchmark 2–3 free vision-capable models on the **same 2 products** (1 English, 1 Arabic).
-2. Score them on: JSON validity, Arabic naturalness, use of concrete facts, cliché count, latency.
-3. Pick a primary model plus an ordered fallback list (OpenRouter `models` array).
-4. Record the scores here and set the status to Accepted.
+## Decision
+1. **Primary provider: Gemini direct**, using a **single multimodal Flash model** for both vision and copy (design DD-2).
+2. **Fallback provider: OpenRouter `:free` models**, used only if Gemini fails or its quota runs out.
+3. **One client for both.** Gemini and OpenRouter both expose an **OpenAI-compatible chat endpoint**, so `llm_client.py` speaks one protocol and the provider is just `base_url + api_key + model` in `.env`. Switching provider = changing config, not code.
+4. `VISION_MODEL` and `COPY_MODEL` are separate settings. If the single model is weak at Arabic copy, we switch `COPY_MODEL` to a second model (owner's rule: "start with one; go to two if it isn't good enough").
 
-Model IDs live in `.env`/config only (NFR-3).
+## Phase 3 benchmark
+Run the same 2 products (1 EN, 1 AR) and score: JSON validity, Arabic naturalness (judged by the owner), use of concrete facts, cliché count, latency. Record the scores here.
+
+## Alternatives rejected
+| Option | Why rejected |
+|---|---|
+| OpenRouter only | Lower free daily cap (50); free models rotate out without notice. |
+| Google's own Gemini SDK | Locks the code to one provider; the OpenAI-compatible endpoint keeps OpenRouter as a drop-in fallback. |
+| Two models from day one | More config and more failure points before we know there's a quality problem. |
 
 ## Consequences
-- The daily cap shapes the design: **at most 2 LLM calls per product** (1 vision + 1 copy call that returns all variants, captions, and the carousel in one JSON), plus a **result cache** so reruns and dashboard reloads don't spend requests.
-- 30 products × 2 = 60 calls, which is over 50/day. Options, owner decides: spread the run over 2 days, or make a one-time $10 credit purchase (unlocks 1,000/day; the credits are not spent on free models).
+- The daily cap still shapes the design: **at most 2 LLM calls per product** + a **result cache** (NFR-7). 10 products = 20 calls.
+- Gemini's free tier may use prompts to improve Google's products. That is acceptable here (public catalog data, no personal data), and it is noted in the README.
