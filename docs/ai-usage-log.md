@@ -116,3 +116,7 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **The AI hallucinated a price:** "$149" while the catalog says "$129 – $189", despite a prompt rule against invented prices. **Response:** a stricter rule in `copy_v2` **and** a deterministic price fact-check that flags any $ amount not in the catalog. Lesson: a prompt rule is a request, not a guarantee; check the output in code.
 - Other fixes from the live run: hashtags duplicated inside the caption text are stripped; the last carousel card must be the CTA (v2); longer 503 backoff (3 s, 6 s).
 - **I also asked** for an honest assessment of my position before the interview. The AI pointed out that `interview-prep.md` had answers saying "I reviewed/wrote" for work the AI did. It was rewritten so it states accurately who did what.
+
+### Trying it myself
+- **Asked:** "How do I try it myself?" There was no CLI yet, so the AI added `scripts/try_copy.py` (one product → photo analysis + copy, printed and saved to `.cache/try/`).
+- **First run of the script (product #5, French silk shirt)** revealed a gap in the price fact-check: it only understood "$190", not the "190 $" order used in French/Spanish/German (or "149 دولار" in Arabic). The prices in that ad were correct, but a wrong one in that format would have slipped through. Fixed test-first (7 format cases).

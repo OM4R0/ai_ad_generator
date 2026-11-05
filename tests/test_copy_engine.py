@@ -173,3 +173,19 @@ def test_copy_prompt_v2_rules_from_the_live_review():
     assert "LAST carousel card" in system
     assert "Do not put hashtags inside" in system
     assert "price" in system.lower() and HEADPHONES.price_range in client.calls[0]["user"]
+
+
+@pytest.mark.parametrize("text, flagged", [
+    ("dès 149 $", True),          # French/Spanish/German order: number then symbol
+    ("ab 149$", True),
+    ("بسعر 149 دولار", True),      # Arabic
+    ("for 149 USD", True),
+    ("only $149", True),
+    ("dès 129 $", False),         # in the catalog range → fine
+    ("149 مل", False),            # a number that is not a price
+])
+def test_price_check_understands_european_and_arabic_formats(text, flagged):
+    # Live (product #5, French): "dès 190 $" was not even looked at by the checker.
+    draft = _draft(variants=[_variant("pain_point") | {"headline": text}, _variant("emotional")])
+    result = _generate(HEADPHONES, FakeClient(result=draft))     # catalog: $129 – $189
+    assert any("price" in w for w in result.warnings) is flagged

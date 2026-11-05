@@ -160,7 +160,13 @@ def quality_warnings(copy: AdCopy) -> list[str]:
     return warnings
 
 
-_PRICE_RE = re.compile(r"(?:\$|USD\s?)\s?(\d[\d,]*(?:\.\d+)?)", re.IGNORECASE)
+# A dollar amount with the currency before ("$149", "USD 149") or after the number
+# ("149 $" in French/Spanish/German, "149 USD", "149 دولار" in Arabic).
+_PRICE_RE = re.compile(
+    r"(?:\$|\bUSD\s?)\s?(\d[\d,]*(?:\.\d+)?)"
+    r"|(\d[\d,]*(?:\.\d+)?)\s?(?:\$|USD\b|dollars?\b|دولار)",
+    re.IGNORECASE,
+)
 _NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
 
@@ -168,12 +174,13 @@ def price_warnings(copy: AdCopy, product: Product) -> list[str]:
     """Fact check: dollar amounts in the copy that are not in the catalog price range.
 
     Found live: the model wrote "$149" for a product listed at "$129 – $189".
-    (Covers $ / USD amounts; prices written in words or other currencies are not checked.)
+    (Covers $ / USD / دولار amounts; prices in words or other currencies are not checked.)
     """
     allowed = {_to_number(n) for n in _NUMBER_RE.findall(product.price_range)}
     warnings, seen = [], set()
     for where, text in _texts(copy):
-        for amount in _PRICE_RE.findall(text):
+        for before, after in _PRICE_RE.findall(text):
+            amount = before or after
             value = _to_number(amount)
             if value not in allowed and value not in seen:
                 seen.add(value)
