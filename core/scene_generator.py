@@ -14,8 +14,10 @@ from __future__ import annotations
 import hashlib
 import io
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 from urllib.parse import quote
 
 import httpx
@@ -28,7 +30,13 @@ SCENE_GUARD_RAILS = (
     ", empty background scene for a product advertisement, no product, no text, "
     "no people, no hands, no logos, no watermark, photorealistic, soft light, high detail"
 )
-ATTEMPTS = 2
+ATTEMPTS = 3
+# Anonymous use is rate limited (~1 request per 5-15 s). Back-to-back requests got
+# HTTP 402 in the Phase 5 live run, while a single request later got 200.
+MIN_INTERVAL_S = 16.0
+RATE_LIMITED = {402, 429}
+RATE_LIMIT_WAIT_S = 20.0
+ERROR_WAIT_S = 3.0
 # The free tier stamps a watermark at the bottom: ask for a taller image, keep the top.
 WATERMARK_CROP = 0.10
 TIMEOUT_S = 90.0
@@ -49,11 +57,16 @@ class SceneGenerator:
         cache_dir: Path | None = None,
         transport: httpx.BaseTransport | None = None,
         timeout: float = TIMEOUT_S,
+        min_interval_s: float = MIN_INTERVAL_S,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.provider = provider
         self._cache_dir = cache_dir / "scenes" if cache_dir else None
         self._transport = transport
         self._timeout = timeout
+        self._min_interval = min_interval_s
+        self._sleep = sleep
+        self._last_request_at: float | None = None
 
     def generate(
         self, prompt: str, size: tuple[int, int], palette: list[str], seed: int = 0
@@ -90,11 +103,20 @@ class SceneGenerator:
         last = "no attempt"
         with httpx.Client(timeout=self._timeout, transport=self._transport,
                           follow_redirects=True) as client:
-            for _ in range(ATTEMPTS):
+            wait = 0.0
+            for attempt in range(ATTEMPTS):
+                if attempt:
+                    self._sleep(wait)
+                self._respect_rate_limit()
+                wait = ERROR_WAIT_S
                 try:
                     response = client.get(url, params=params)
                 except httpx.HTTPError as exc:
                     last = f"network error: {exc!r}"
+                    continue
+                if response.status_code in RATE_LIMITED:
+                    last = f"HTTP {response.status_code} (rate limited)"
+                    wait = _retry_after(response) or RATE_LIMIT_WAIT_S
                     continue
                 if response.status_code != 200:
                     last = f"HTTP {response.status_code}"
@@ -112,6 +134,14 @@ class SceneGenerator:
                     last = f"undecodable image: {exc}"
         raise _SceneError(last)
 
+    def _respect_rate_limit(self) -> None:
+        now = time.monotonic()
+        if self._last_request_at is not None and self._min_interval > 0:
+            remaining = self._min_interval - (now - self._last_request_at)
+            if remaining > 0:
+                self._sleep(remaining)
+        self._last_request_at = time.monotonic()
+
     def _cache_file(self, prompt: str, size: tuple[int, int], seed: int) -> Path | None:
         if self._cache_dir is None:
             return None
@@ -121,6 +151,13 @@ class SceneGenerator:
 
 class _SceneError(Exception):
     pass
+
+
+def _retry_after(response: httpx.Response) -> float | None:
+    try:
+        return max(0.0, min(float(response.headers.get("Retry-After", "")), 60.0))
+    except ValueError:
+        return None
 
 
 def gradient_background(size: tuple[int, int], palette: list[str]) -> Image.Image:

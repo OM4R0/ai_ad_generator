@@ -21,8 +21,9 @@ from core.schemas import CallUsage, Product, VisionAnalysis
 
 logger = logging.getLogger(__name__)
 
-# v2 (2026-11-05): also reports visible_brands (the oud photo turned out to be a Chanel bottle)
-VISION_PROMPT = "vision_v2"
+# v2: also reports visible_brands + photo_matches_product (the oud photo is a Chanel bottle)
+# v3: "same kind of item" is enough (v2 rejected round sunglasses for aviator sunglasses)
+VISION_PROMPT = "vision_v3"
 VISION_TEMPERATURE = 0.2  # describing a photo: we want consistency, not creativity
 
 

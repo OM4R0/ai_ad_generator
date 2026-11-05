@@ -432,3 +432,16 @@ def test_c1_config_colours_still_beat_vision_colours():
     brand = resolve_brand(OUD, vision_colors=["#123456"])   # real config/brands/ folder
     assert brand.brand_colors == ["#1A1A1A", "#D4AF37", "#FFFFFF"]
     assert "vision" not in brand.sources
+
+
+
+# --- Stress review: is the chosen text colour readable on EVERY background? - #
+
+def test_text_colour_meets_wcag_aa_on_every_grey_and_many_colours():
+    from core.brand_manager import contrast_ratio, text_color_for
+
+    backgrounds = [f"#{v:02X}{v:02X}{v:02X}" for v in range(256)]
+    backgrounds += [f"#{r:02X}{g:02X}{b:02X}" for r in range(0, 256, 51)
+                    for g in range(0, 256, 51) for b in range(0, 256, 51)]
+    worst = min((contrast_ratio(bg, text_color_for(bg)), bg) for bg in backgrounds)
+    assert worst[0] >= 4.5, worst          # e.g. #777777 only reached 4.48 with #111111

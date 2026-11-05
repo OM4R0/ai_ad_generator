@@ -42,7 +42,18 @@ _FONT_FILES: dict[tuple[str, str], str] = {
     ("arabic", "medium"): "IBMPlexSansArabic-Medium.ttf",
 }
 _ARABIC_RE = re.compile(r"[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]")
+# Emoji and pictographs: the bundled fonts have no glyphs for them (they would render
+# as empty boxes). Captions keep their emoji; only text drawn on images drops them.
+# Symbols like ° © ® ™ → – are kept on purpose.
+_EMOJI_RE = re.compile(
+    "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0000FE0E\U0000FE0F"
+    "\U0000200D\U000E0020-\U000E007F\U00002B50\U00002B55]"
+)
 ELLIPSIS = "…"
+
+
+def strip_emoji(text: str) -> str:
+    return " ".join(_EMOJI_RE.sub(" ", text).split())
 LINE_SPACING = 1.28
 
 
@@ -110,7 +121,7 @@ def fit_text(
     If it doesn't fit even at min_size, the text is cut after max_lines lines
     and ends with an ellipsis. Words longer than a line are broken by characters.
     """
-    text = " ".join(text.split())  # one paragraph; collapse whitespace/newlines
+    text = strip_emoji(text)  # one paragraph, no emoji, collapsed whitespace
     for size in range(max_size, min_size - 1, -step):
         font = font_for(language, weight, size, text)
         lines = _wrap(text, font, max_width)

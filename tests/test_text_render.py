@@ -87,3 +87,16 @@ def test_left_aligned_block_starts_at_the_left_edge():
     box = draw_text_block(ImageDraw.Draw(img), block, x=100, y=50, width=600,
                           align="left", fill="#000000")
     assert box[0] == 100 and box[2] <= 700
+
+
+
+# --- Stress review: the bundled fonts have no emoji glyphs ----------------- #
+
+def test_emoji_are_removed_from_text_drawn_on_images():
+    # Captions may keep emoji (the platform renders them); our fonts would draw "tofu" boxes.
+    block = fit_text("Silence 🎧 the office ✨ today 👍🏽", Language.EN, "bold",
+                     max_width=2000, max_lines=1, max_size=40, min_size=20)
+    assert block.lines == ["Silence the office today"]
+    arabic = fit_text("فخامة 👑 ملكية", Language.AR, "bold",
+                      max_width=2000, max_lines=1, max_size=40, min_size=20)
+    assert arabic.lines == ["فخامة ملكية"]

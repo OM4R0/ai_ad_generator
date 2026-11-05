@@ -243,3 +243,43 @@ def test_c5_client_closes_its_http_connection():
     with LLMClient(_settings(), transport=httpx.MockTransport(FakeServer())) as client:
         assert not client.closed
     assert client.closed
+
+
+
+# --- Live run: Gemini free tier = 20 requests/day/model (HTTP 429) --------- #
+
+def _quota(delay: str, per_day: bool = True) -> httpx.Response:
+    quota_id = "GenerateRequestsPerDayPerProjectPerModel-FreeTier" if per_day else "PerMinute"
+    return httpx.Response(429, json=[{"error": {
+        "code": 429, "status": "RESOURCE_EXHAUSTED",
+        "message": "You exceeded your current quota.",
+        "details": [
+            {"@type": "type.googleapis.com/google.rpc.QuotaFailure",
+             "violations": [{"quotaId": quota_id}]},
+            {"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": delay},
+        ]}}])
+
+
+def test_daily_quota_exhausted_skips_the_model_at_once():
+    server = FakeServer(_quota("48624s"), _reply('{"word": "ok", "count": 1}'))
+    client, sleeps = _client(server, llm_fallback_models=["m-second"])
+    _, usage = _ask(client)
+    assert usage.model == "m-second"
+    assert len(server.requests) == 2 and sleeps == []       # no retry, no 13-hour wait
+
+
+def test_an_exhausted_model_is_not_called_again_in_the_same_session():
+    server = FakeServer(_quota("48624s"), _reply('{"word": "a", "count": 1}'),
+                        _reply('{"word": "b", "count": 1}'))
+    client, _ = _client(server, llm_fallback_models=["m-second"])
+    _ask(client)
+    _ask(client)
+    assert [json.loads(r.content)["model"] for r in server.requests] == [
+        "m-primary", "m-second", "m-second"]
+
+
+def test_a_short_per_minute_quota_is_waited_out_and_retried():
+    server = FakeServer(_quota("7s", per_day=False), _reply('{"word": "ok", "count": 1}'))
+    client, sleeps = _client(server)
+    _, usage = _ask(client)
+    assert usage.model == "m-primary" and 7 in sleeps

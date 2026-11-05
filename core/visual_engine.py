@@ -28,8 +28,8 @@ from typing import Callable, Iterator
 
 from PIL import Image, ImageDraw, ImageFilter
 
-from core.brand_manager import text_color_for
-from core.scene_generator import SceneGenerator
+from core.brand_manager import contrast_ratio, text_color_for
+from core.scene_generator import SceneGenerator, SceneResult, gradient_background
 from core.schemas import AdCopy, BrandProfile, Language, Product
 from core.text_render import TextBlock, draw_text_block, fit_text
 
@@ -43,6 +43,11 @@ CTA_HEIGHT = 78
 REMBG_MODEL = "isnet-general-use"
 MIN_COVERAGE, MAX_COVERAGE = 0.03, 0.97   # a cut-out outside this range is unusable
 EDGE_ERODE_PX = 2
+MIN_LARGEST_PIECE = 0.70  # below this the cut-out is "in pieces"
+# Checked at 256 px with diagonal links: at 96 px the thin headband of the headphones
+# broke apart and a good cut-out was rejected (measured on all 30 catalog photos).
+PIECES_CHECK_SIDE = 256
+_NEIGHBOURS = [(dx, dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx, dy) != (0, 0)]
 
 Remover = Callable[[Image.Image], Image.Image]
 Box = tuple[int, int, int, int]
@@ -97,9 +102,18 @@ def build_creatives(
         notes.append(note)
 
     palette = _palette(brand)
-    square = scenes.generate(scene_prompt, FEED_SIZE, brand.brand_colors, seed)
+    # ONE image request per product (the free tier allows ~1 request every few
+    # seconds): the tall story scene is generated, and the square is cut from its
+    # middle. A gradient is drawn locally at each size instead (free, better framing).
     story_bg = scenes.generate(scene_prompt, STORY_SIZE, brand.brand_colors, seed)
-    notes += [r.note for r in (square, story_bg) if r.note]
+    if story_bg.source == "gradient":
+        square_image = gradient_background(FEED_SIZE, brand.brand_colors)
+    else:
+        top = (STORY_SIZE[1] - FEED_SIZE[1]) // 2
+        square_image = story_bg.image.crop((0, top, FEED_SIZE[0], top + FEED_SIZE[1]))
+    square = SceneResult(square_image, story_bg.source)
+    if story_bg.note:
+        notes.append(story_bg.note)
 
     style = _Style(language=copy.language, palette=palette, brand_name=brand.brand_name)
     layouts: dict[str, Layout] = {}
@@ -144,7 +158,49 @@ def prepare_product(photo: Image.Image, remover: Remover) -> tuple[Image.Image, 
         return (_framed(photo), "framed",
                 f"cut-out unusable (product covers {coverage:.0%} of the photo); "
                 "used the framed photo")
+    share = _largest_piece_share(alpha)
+    if share < MIN_LARGEST_PIECE:
+        # Live: thin sunglasses came out as two floating lenses (the frame was lost).
+        return (_framed(photo), "framed",
+                f"cut-out fell apart into separate pieces (largest piece {share:.0%}); "
+                "used the framed photo")
     return cut.crop(bbox), "cutout", None
+
+
+def _largest_piece_share(alpha: Image.Image) -> float:
+    """Share of the opaque area that belongs to the largest connected piece.
+
+    A real product is usually one object; a cut-out in several large pieces means
+    the removal lost part of it. Computed on a small copy (fast, pure Python).
+    """
+    small = alpha.copy()
+    small.thumbnail((PIECES_CHECK_SIDE, PIECES_CHECK_SIDE))
+    w, h = small.size
+    raw = small.tobytes()
+    filled = [v > 128 for v in raw]
+    total = sum(filled)
+    if total == 0:
+        return 0.0
+    seen = [False] * (w * h)
+    sizes = []
+    for start in range(w * h):
+        if not filled[start] or seen[start]:
+            continue
+        seen[start], stack, size = True, [start], 0
+        while stack:
+            i = stack.pop()
+            size += 1
+            x, y = i % w, i // w
+            for dx, dy in _NEIGHBOURS:            # 8-connected: diagonals count
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    n = ny * w + nx
+                    if filled[n] and not seen[n]:
+                        seen[n] = True
+                        stack.append(n)
+        sizes.append(size)
+    significant = [s for s in sizes if s >= total * 0.02]   # ignore specks of noise
+    return max(sizes) / max(1, sum(significant))
 
 
 def _clean_edge(alpha: Image.Image) -> Image.Image:
@@ -257,12 +313,20 @@ def _story(background, product, style: _Style, *, headline, hook, cta):
 # --------------------------------------------------------------------------- #
 
 
+MIN_BUTTON_CONTRAST = 2.0   # the CTA pill must stand out from the scrim behind it
+
+
 def _palette(brand: BrandProfile) -> dict[str, str]:
     colors = brand.brand_colors or ["#111827", "#F59E0B"]
     primary = colors[0]
+    on_primary = text_color_for(primary)
     accent = colors[1] if len(colors) > 1 else colors[0]
+    if contrast_ratio(accent, primary) < MIN_BUTTON_CONTRAST:
+        # e.g. two near-identical dark blues from the vision step: the button would
+        # vanish into the scrim, so it takes the text colour instead.
+        accent = on_primary
     return {"primary": primary, "accent": accent,
-            "on_primary": text_color_for(primary), "on_accent": text_color_for(accent)}
+            "on_primary": on_primary, "on_accent": text_color_for(accent)}
 
 
 def _scrim(canvas: Image.Image, *, start: int, solid: int, color: str) -> None:

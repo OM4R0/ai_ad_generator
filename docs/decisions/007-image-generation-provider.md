@@ -32,4 +32,5 @@ None of them is production-grade.
 - Anonymous Pollinations returned **one** image, then **HTTP 402** (payment required) for every following request.
 - The free image had a **"pollinations.ai" watermark** in the bottom-right corner → we now request a 10 % taller image and crop the bottom strip.
 - The gradient fallback worked automatically, and was improved (a soft "studio light" glow behind the product), because it will be the common case.
-- **Open question for the owner:** keep gradients only (reliable, no account), get a free Pollinations token, or add a second provider (Cloudflare Workers AI, free account). See the Phase 5 hand-off.
+- **Owner decision: keep Pollinations.** Re-test: a single request later returned **200**. The 402s came from requests sent back to back (anonymous limit ≈ one request every 5–15 s).
+- **Changes:** at least 16 s between requests; 402/429 → wait (Retry-After or 20 s) and retry; **one scene per product** (the square is cut from the middle of the story scene). Live: both test products got AI scenes, without the watermark.

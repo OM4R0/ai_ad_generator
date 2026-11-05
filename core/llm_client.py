@@ -65,6 +65,10 @@ class _Fatal(Exception):
     """Don't retry on this provider (e.g. 401, 400); move to the next one."""
 
 
+class _QuotaExhausted(_Fatal):
+    """The model's DAILY free quota is used up: skip it for the rest of the session."""
+
+
 class LLMClient:
     def __init__(
         self,
@@ -80,6 +84,8 @@ class LLMClient:
             60.0 / settings.max_requests_per_min if settings.max_requests_per_min > 0 else 0.0
         )
         self._last_request_at: float | None = None
+        # (base_url, model) pairs whose daily quota ran out in this session.
+        self._exhausted: set[tuple[str, str]] = set()
 
     # ------------------------------------------------------------- lifecycle
 
@@ -126,9 +132,17 @@ class LLMClient:
         started = time.monotonic()
         failures: list[str] = []
 
-        for provider in self._providers(model):
+        providers = self._providers(model)
+        if not providers:
+            raise LLMError(f"every configured model is out of its daily quota ({step!r})")
+        for provider in providers:
             try:
                 result = self._ask_provider(provider, messages, schema, temperature, usage)
+            except _QuotaExhausted as exc:
+                self._exhausted.add((provider.base_url, provider.model))
+                failures.append(f"{provider.model}@{provider.name}: {exc}")
+                logger.warning("LLM %s: %s; skipping it for this session", step, exc)
+                continue
             except (_Fatal, _Retryable, ValueError, ValidationError) as exc:
                 failures.append(f"{provider.model}@{provider.name}: {exc}")
                 logger.warning("LLM %s failed on %s: %s", step, provider.model, exc)
@@ -151,7 +165,7 @@ class LLMClient:
         if s.fallback_api_key:
             providers += [_Provider(s.fallback_base_url, s.fallback_api_key, m)
                           for m in s.fallback_models]
-        return providers
+        return [p for p in providers if (p.base_url, p.model) not in self._exhausted]
 
     def _ask_provider(self, provider, messages, schema, temperature, usage):
         """One provider: request, validate, and if invalid one repair round."""
@@ -206,6 +220,14 @@ class LLMClient:
         except httpx.TransportError as exc:  # DNS, connection resets
             raise _Retryable(f"network error: {exc!r}") from exc
 
+        if response.status_code == 429:
+            delay, per_day = _quota_info(response)
+            if per_day:
+                hours = f" (resets in {delay / 3600:.1f} h)" if delay else ""
+                raise _QuotaExhausted(f"daily free quota used up{hours}")
+            raise _Retryable("HTTP 429 (rate limited)",
+                             min(delay, MAX_RETRY_AFTER_S) if delay is not None
+                             else _retry_after(response))
         if response.status_code in RETRYABLE_STATUS:
             raise _Retryable(f"HTTP {response.status_code}", _retry_after(response))
         if response.status_code >= 400:
@@ -294,6 +316,38 @@ def _retry_after(response: httpx.Response) -> float | None:
         return max(0.0, min(float(raw), MAX_RETRY_AFTER_S)) if raw else None
     except ValueError:  # e.g. an HTTP date: fall back to our own backoff
         return None
+
+
+DAILY_QUOTA_MIN_DELAY_S = 300.0   # a "retry in" longer than this is not a per-minute limit
+
+
+def _quota_info(response: httpx.Response) -> tuple[float | None, bool]:
+    """Read Gemini's 429 body: (retry delay in seconds, is it a DAILY quota?).
+
+    Live example: quotaId "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+    retryDelay "48624s" (13.5 hours) after 20 requests in a day.
+    """
+    try:
+        body = response.json()
+    except ValueError:
+        return None, False
+    error = (body[0] if isinstance(body, list) and body else body)
+    error = error.get("error", error) if isinstance(error, dict) else {}
+    delay, per_day = None, False
+    for detail in error.get("details", []) if isinstance(error, dict) else []:
+        if not isinstance(detail, dict):
+            continue
+        if detail.get("@type", "").endswith("RetryInfo"):
+            try:
+                delay = float(str(detail.get("retryDelay", "")).rstrip("s"))
+            except ValueError:
+                pass
+        for violation in detail.get("violations", []) or []:
+            if "perday" in str(violation.get("quotaId", "")).lower():
+                per_day = True
+    if delay is not None and delay > DAILY_QUOTA_MIN_DELAY_S:
+        per_day = True
+    return delay, per_day
 
 
 def _as_int(value: object) -> int:

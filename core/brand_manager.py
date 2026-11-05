@@ -355,11 +355,20 @@ def contrast_ratio(a: str, b: str) -> float:
     return (la + 0.05) / (lb + 0.05)
 
 
+WCAG_AA = 4.5
+
+
 def text_color_for(background: str) -> str:
-    """Whichever of light/dark text has the higher contrast on `background`."""
-    if contrast_ratio(background, LIGHT_TEXT) >= contrast_ratio(background, DARK_TEXT):
-        return LIGHT_TEXT
-    return DARK_TEXT
+    """Whichever of light/dark text has the higher contrast on `background`.
+
+    Soft black (#111111) looks nicer than pure black, but on mid-greys
+    (around #777777) it reaches only ~4.2:1. If neither option meets WCAG AA
+    (4.5:1), pure black is used: black or white always reaches at least 4.58:1.
+    """
+    best = max((LIGHT_TEXT, DARK_TEXT), key=lambda c: contrast_ratio(background, c))
+    if contrast_ratio(background, best) < WCAG_AA:
+        return "#000000"
+    return best
 
 
 # --------------------------------------------------------------------------- #

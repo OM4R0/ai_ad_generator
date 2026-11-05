@@ -6,6 +6,7 @@ import io
 from pathlib import Path
 
 import httpx
+import pytest
 from PIL import Image
 
 from core.scene_generator import SceneGenerator, gradient_background
@@ -29,9 +30,11 @@ class Server:
         return item
 
 
-def _gen(server, tmp_path: Path, provider="pollinations") -> SceneGenerator:
+def _gen(server, tmp_path: Path, provider="pollinations", sleeps=None, min_interval_s=0.0):
     return SceneGenerator(provider=provider, cache_dir=tmp_path,
-                          transport=httpx.MockTransport(server))
+                          transport=httpx.MockTransport(server),
+                          sleep=(sleeps.append if sleeps is not None else (lambda s: None)),
+                          min_interval_s=min_interval_s)
 
 
 def _ok() -> httpx.Response:
@@ -55,21 +58,22 @@ def test_prompt_forbids_products_text_and_people(tmp_path):
 
 
 def test_failure_falls_back_to_a_brand_gradient(tmp_path):
-    server = Server(httpx.Response(500), httpx.Response(500))
+    server = Server(httpx.Response(500), httpx.Response(500), httpx.Response(500))
     result = _gen(server, tmp_path).generate("x", (1080, 1080), ["#0B1F3A", "#00C2D1"])
     assert result.source == "gradient" and "500" in result.note
     assert result.image.size == (1080, 1080)
 
 
 def test_network_error_falls_back_to_a_gradient(tmp_path):
-    server = Server(httpx.ConnectError("down"), httpx.ConnectError("down"))
+    server = Server(*[httpx.ConnectError("down") for _ in range(3)])
     assert _gen(server, tmp_path).generate("x", (100, 100), ["#000000"]).source == "gradient"
 
 
 def test_a_non_image_reply_is_rejected(tmp_path):
     server = Server(httpx.Response(200, text="<html>rate limited</html>",
                                    headers={"content-type": "text/html"}),
-                    httpx.Response(200, text="<html>", headers={"content-type": "text/html"}))
+                    *[httpx.Response(200, text="<html>", headers={"content-type": "text/html"})
+                      for _ in range(2)])
     assert _gen(server, tmp_path).generate("x", (100, 100), ["#000000"]).source == "gradient"
 
 
@@ -124,3 +128,24 @@ def test_gradient_has_a_soft_glow_behind_the_product():
     center = sum(img.getpixel((200, 160)))
     side = sum(img.getpixel((5, 160)))
     assert center > side + 15
+
+
+
+# --- Phase 5 stress review: the "402" was the anonymous rate limit ---------- #
+
+def test_requests_are_spaced_for_the_anonymous_rate_limit(tmp_path):
+    # Live: back-to-back requests got HTTP 402; a single request 10 minutes later got 200.
+    sleeps: list[float] = []
+    gen = _gen(Server(_ok(), _ok()), tmp_path, sleeps=sleeps, min_interval_s=16)
+    gen.generate("first", (100, 100), ["#000000"])
+    gen.generate("second", (100, 100), ["#000000"])
+    assert any(s > 10 for s in sleeps)
+
+
+@pytest.mark.parametrize("status", [402, 429])
+def test_rate_limit_answers_wait_and_retry_instead_of_giving_up(tmp_path, status):
+    sleeps: list[float] = []
+    server = Server(httpx.Response(status), _ok())
+    result = _gen(server, tmp_path, sleeps=sleeps).generate("x", (100, 100), ["#000000"])
+    assert result.source == "pollinations"
+    assert any(s >= 15 for s in sleeps)

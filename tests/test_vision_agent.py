@@ -82,7 +82,7 @@ def test_vision_prompt_v2_asks_for_visible_brands():
 
     system, _ = load_prompt(current, product_name="X", brand_name="B", category="C",
                             description="D", features="- f", tone="T")
-    assert current == "vision_v2" and "visible_brands" in system
+    assert "visible_brands" in system
 
 
 @pytest.mark.parametrize("visible, brand, expected", [
@@ -124,3 +124,15 @@ def test_photo_warnings_are_empty_for_a_matching_unbranded_photo():
     from core.vision_agent import photo_warnings
 
     assert photo_warnings(GOOD, HEADPHONES) == []
+
+
+
+# --- Live run: "round sunglasses" was judged not to match "aviator sunglasses" #
+
+def test_vision_prompt_accepts_style_differences_of_the_same_kind_of_item():
+    from core.vision_agent import VISION_PROMPT as current
+
+    system, _ = load_prompt(current, product_name="X", brand_name="B", category="C",
+                            description="D", features="- f", tone="T")
+    assert current == "vision_v3"
+    assert "style" in system.lower() and "same kind of item" in system.lower()

@@ -136,3 +136,59 @@ def test_semi_transparent_background_fringe_is_removed():
     pixels = [tuple(raw[i:i + 4]) for i in range(0, len(raw), 4)]
     yellow = [p for p in pixels if p[3] > 40 and p[0] > 200 and p[1] > 180 and p[2] < 90]
     assert yellow == []
+
+
+
+# --- Live run: thin sunglasses came out as two floating lenses ------------- #
+
+def lenses_remover(image: Image.Image) -> Image.Image:
+    """Two separate blobs and nothing joining them, like the sunglasses cut-out."""
+    from PIL import ImageDraw as _Draw
+
+    out = Image.new("RGBA", (400, 200), (0, 0, 0, 0))
+    draw = _Draw.Draw(out)
+    draw.ellipse((20, 50, 170, 150), fill=(40, 90, 80, 255))
+    draw.ellipse((230, 50, 380, 150), fill=(40, 90, 80, 255))
+    return out
+
+
+def test_a_cutout_in_separate_pieces_falls_back_to_the_framed_photo():
+    from core.visual_engine import prepare_product
+
+    _, mode, note = prepare_product(Image.new("RGB", (400, 200)), lenses_remover)
+    assert mode == "framed" and "pieces" in note
+
+
+def test_one_solid_object_with_a_tiny_speck_stays_a_cutout():
+    from PIL import ImageDraw as _Draw
+    from core.visual_engine import prepare_product
+
+    def remover(image):
+        out = Image.new("RGBA", (300, 300), (0, 0, 0, 0))
+        draw = _Draw.Draw(out)
+        draw.ellipse((50, 50, 250, 250), fill=(200, 0, 0, 255))
+        draw.rectangle((5, 5, 9, 9), fill=(200, 0, 0, 255))   # a speck of noise
+        return out
+
+    _, mode, _ = prepare_product(Image.new("RGB", (300, 300)), remover)
+    assert mode == "cutout"
+
+
+def test_a_thin_connector_like_a_headband_keeps_the_object_in_one_piece():
+    # Sanity check only: this synthetic shape is one piece with the old rule too, so it
+    # does NOT reproduce the headphones bug. The real regression test (real photos,
+    # real model) is tests/test_real_cutouts.py.
+    from PIL import ImageDraw as _Draw
+    from core.visual_engine import prepare_product
+
+    def remover(image):
+        out = Image.new("RGBA", (1000, 400), (0, 0, 0, 0))
+        draw = _Draw.Draw(out)
+        draw.ellipse((40, 100, 340, 380), fill=(30, 30, 30, 255))
+        draw.ellipse((660, 100, 960, 380), fill=(30, 30, 30, 255))
+        # 2 % of the width: thinner than the real headband (4.6 %, measured on photo #13)
+        draw.line((190, 110, 500, 20, 810, 110), fill=(30, 30, 30, 255), width=20)
+        return out
+
+    _, mode, note = prepare_product(Image.new("RGB", (1000, 400)), remover)
+    assert mode == "cutout", note

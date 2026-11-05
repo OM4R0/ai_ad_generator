@@ -40,3 +40,10 @@ Same 2 products (headphones #13 EN, oud #10 AR) with the `vision_v1` prompt, on 
 ## Consequences
 - The daily cap still shapes the design: **at most 2 LLM calls per product** + a **result cache** (NFR-7). 10 products = 20 calls.
 - Gemini's free tier may use prompts to improve Google's products. That is acceptable here (public catalog data, no personal data), and it is noted in the README.
+
+## Quota finding (Phase 5 stress test, 2026-11-05)
+The Gemini 429 body said: *"Generate content requests per day limit exceeded on Free Tier… limit: 20, model: gemini-3.6-flash… retry in 13h30m"* (`gemini-3.5-flash` is served as 3.6-flash).
+- **20 requests per day per model.** 10 products × 2 calls = one model's whole day.
+- **Decision:** split the steps across models (DD-2 made this a config change): `VISION_MODEL=gemini-3.5-flash-lite` (describing a photo is the easier task), `COPY_MODEL=gemini-3.5-flash` (the stronger model writes). Two separate daily quotas.
+- **Code:** a daily-quota 429 now skips that model at once and for the rest of the session (no pointless retries); a per-minute 429 is waited out.
+- **Operational rule:** run the 10-product batch once after the daily reset, cache the results, and record the video from the cache.
