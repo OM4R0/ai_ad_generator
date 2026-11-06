@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import io
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -12,7 +14,7 @@ from config.settings import PROJECT_ROOT
 from core.brand_manager import resolve_brand
 from core.copy_engine import template_copy
 from core.excel_loader import load_catalog
-from core.output_writer import slugify, usage_totals, write_campaign
+from core.output_writer import campaign_zip, slugify, usage_totals, write_campaign
 from core.scene_generator import SceneGenerator
 from core.schemas import AdCopy, CallUsage, CampaignResult
 from core.visual_engine import FEED_SIZE, STORY_SIZE, build_creatives
@@ -175,3 +177,39 @@ def test_w7_two_products_with_the_same_name_get_separate_folders(tmp_path):
 def test_w8_the_output_folder_is_created_when_missing(tmp_path):
     folder = write_campaign(*_campaign(HEADPHONES, tmp_path), tmp_path / "a" / "b")
     assert (folder / "metadata.json").exists()
+
+
+# --------------------------------------------------------------------------- #
+# The dashboard's .zip export (FR-13)
+# --------------------------------------------------------------------------- #
+
+def test_w9_the_zip_holds_exactly_the_files_of_the_output_folder(tmp_path):
+    result, creatives = _campaign(BACKPACK, tmp_path)
+    folder = write_campaign(result, creatives, tmp_path / "output")
+    with zipfile.ZipFile(io.BytesIO(campaign_zip(result, creatives))) as archive:
+        names = archive.namelist()
+        prefix = f"{folder.parent.name}/{folder.name}/"     # same Brand/Product layout
+        assert all(name.startswith(prefix) for name in names)
+        assert {name[len(prefix):] for name in names} == _names(folder)
+        copy = AdCopy.model_validate_json(archive.read(prefix + "copy.json").decode("utf-8"))
+        assert copy.direction == "rtl"
+        with Image.open(io.BytesIO(archive.read(prefix + "creative_story.png"))) as story:
+            assert story.size == STORY_SIZE
+
+
+def test_w9_the_zip_metadata_lists_the_files_like_the_folder_does(tmp_path):
+    result, creatives = _campaign(HEADPHONES, tmp_path)
+    folder = write_campaign(result, creatives, tmp_path / "output")
+    on_disk = json.loads((folder / "metadata.json").read_text("utf-8"))
+    with zipfile.ZipFile(io.BytesIO(campaign_zip(result, creatives))) as archive:
+        [meta_name] = [n for n in archive.namelist() if n.endswith("metadata.json")]
+        in_zip = json.loads(archive.read(meta_name).decode("utf-8"))
+    assert in_zip["files"] == on_disk["files"]
+    assert in_zip["totals"] == on_disk["totals"]
+
+
+def test_w9_making_a_zip_does_not_need_or_touch_the_output_folder(tmp_path):
+    result, creatives = _campaign(HEADPHONES, tmp_path)
+    data = campaign_zip(result, creatives)
+    assert zipfile.ZipFile(io.BytesIO(data)).testzip() is None   # a valid archive
+    assert not (tmp_path / "output").exists()

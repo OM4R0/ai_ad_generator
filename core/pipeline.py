@@ -188,6 +188,26 @@ def open_services(
     else uses the fallbacks (template copy, gradient backgrounds).
     refresh: ignore cached LLM answers (new ones are still saved).
     """
+    services, client = build_services(settings, offline=offline, refresh=refresh, remover=remover)
+    try:
+        yield services
+    finally:
+        if client is not None:
+            client.close()
+
+
+def build_services(
+    settings: Settings,
+    *,
+    offline: bool = False,
+    refresh: bool = False,
+    remover: Remover | None = None,
+) -> tuple[Services, LLMClient | None]:
+    """The services, plus the HTTP client the caller must close (None when offline).
+
+    The CLI uses this through `open_services` (closed after the batch); the
+    dashboard keeps one set alive for as long as the app runs.
+    """
     client: LLMClient | None = None
     if offline:
         llm = CachedLLM(OfflineLLM(), settings.cache_dir)
@@ -196,8 +216,4 @@ def open_services(
         client = LLMClient(settings)
         llm = CachedLLM(client, settings.cache_dir, refresh=refresh)
         scenes = SceneGenerator(settings.image_provider, cache_dir=settings.cache_dir)
-    try:
-        yield Services(settings=settings, llm=llm, scenes=scenes, remover=remover)
-    finally:
-        if client is not None:
-            client.close()
+    return Services(settings=settings, llm=llm, scenes=scenes, remover=remover), client

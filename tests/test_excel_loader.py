@@ -179,3 +179,9 @@ def test_image_paths_resolve_against_project_root_wherever_the_catalog_is(tmp_pa
     product = load_catalog(path).by_id(1)
     assert product.image_path == PROJECT_ROOT / "product_images" / "01_aeroglide_shoes.jpg"
     assert product.image_path.exists()
+
+
+def test_the_catalog_path_can_be_given_as_plain_text():
+    # Found by the dashboard tests: a str path crashed deep inside (no .suffix).
+    result = load_catalog(str(CATALOG_XLSX))
+    assert len(result.products) == 30

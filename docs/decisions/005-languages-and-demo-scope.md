@@ -29,6 +29,12 @@ whose photo shows the right kind of item without a third-party brand:
 | 21 | PulseFit Active Slim AMOLED Fitness Tracker | French |
 | 24 | Milano Saffiano Leather Everyday Tote Bag | French |
 
+**#23 backpack, decided by the owner 2026-11-06 (Phase 6 live run):** the vision check found a small
+third-party logo ("LEVELS") on the backpack in the reference photo. **Kept in the demo as it is**: the
+ad renders well, and the warning in the CLI summary and `metadata.json` shows the system's multimodal
+check working. In real use a person would replace the photo before publishing (the dashboard's upload
+option does exactly that).
+
 Optional 11th: #10 Sultan Royal Amber Oud (Al-Andalus Parfums, the brief's example brand),
 with a correct perfume photo uploaded in the dashboard (brief option D).
 

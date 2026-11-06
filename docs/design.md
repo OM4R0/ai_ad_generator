@@ -72,7 +72,8 @@ config/
 └── prompt_templates/   versioned prompt files (see §6)
 assets/fonts/           Latin + Arabic fonts (open license)                ADR-005
 main.py                 CLI
-app.py                  Streamlit dashboard                                 FR-13
+app.py                  Streamlit dashboard: drawing only                   FR-13
+core/dashboard.py       the dashboard's decisions, testable without a browser FR-10/13/14
 ```
 
 **Rule:** modules communicate only through the `schemas.py` objects. No module reads another module's internals.
@@ -190,6 +191,14 @@ Prompt design principles (from spec §8):
 **Fonts:** a Latin sans + an Arabic font with OFL license, bundled in `assets/fonts/` so the output looks the same on every machine. Candidates: *Inter / Montserrat* + *Cairo / IBM Plex Sans Arabic* (chosen in Phase 5).
 
 **Carousel (FR-9):** card 1 = hook on the hero scene; cards 2..N-1 = one feature each (from the copy's carousel cards) with a product crop; last card = CTA. All cards share a background family and progress dots.
+
+**Dashboard (FR-13, Phase 7):** `app.py` only draws; every decision is in `core/dashboard.py`, and ads are made by the same `pipeline.run_product` as the CLI (with `write=False`: nothing is written until the user presses Save).
+- Streamlit reruns the script on every click, so `st.session_state` holds what must survive: the variants per product (ADR-004, last 5), the user's brand edits per product (merged, so an edit is never lost on a later regenerate), and the brand-PDF result **per brand** (so it can't leak onto another brand's product).
+- The brand form's widget keys include the product ID and a hash of the brand shown, and the page reruns after each generation. Otherwise stale form values (filled before the vision step) would override the product colours, or one product's language would carry over to the next.
+- Copy is shown in `<div dir="rtl|ltr">` blocks, HTML-escaped because the text comes from an LLM.
+- The `.zip` and the output folder are built by one function (`output_writer.campaign_files`), so they always hold the same files.
+- The brand PDF is read with prompt `brand_pdf_v1` (schema `BrandPdfDraft`, validated field by field); hex codes written in the PDF beat the LLM's colours.
+- Tested with Streamlit's `AppTest` (no browser) and a fake LLM.
 
 **Mockup (FR-15):** the feed creative is placed inside a drawn Instagram post frame (header with avatar + brand name, action icons, caption preview). It is saved as `mockup_instagram.png` and also shown in the dashboard.
 

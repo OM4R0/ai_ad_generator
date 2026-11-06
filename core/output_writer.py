@@ -15,13 +15,13 @@ never touches anything else in the folder.
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import re
 import unicodedata
+import zipfile
 from pathlib import Path
-
-from PIL import Image
 
 from core.schemas import CallUsage, CampaignResult
 from core.visual_engine import CreativeSet
@@ -56,27 +56,52 @@ def slugify(text: str, fallback: str) -> str:
 def write_campaign(result: CampaignResult, creatives: CreativeSet, output_dir: Path) -> Path:
     """Write one product's campaign and return its folder."""
     folder = _product_folder(Path(output_dir), result)
+    files = campaign_files(result, creatives)
     folder.mkdir(parents=True, exist_ok=True)
     _remove_previous_files(folder)
+    metadata = files.pop("metadata.json")
+    for name, data in files.items():
+        (folder / name).write_bytes(data)
+    (folder / "metadata.json").write_bytes(metadata)  # last: its presence = a complete folder
+    result.files = [Path(name) for name in sorted(files)]
+    return folder
 
+
+def campaign_files(result: CampaignResult, creatives: CreativeSet) -> dict[str, bytes]:
+    """Every file of one campaign, by name. The ONE place that decides what a
+    campaign contains: the output folder and the dashboard's .zip both use it."""
     images = {"creative_feed.png": creatives.feed_variants[0],
               "creative_feed_b.png": creatives.feed_variants[1],
               "creative_story.png": creatives.story}
     for i, slide in enumerate(creatives.carousel, start=1):
         images[f"carousel_slide_{i}.png"] = slide
+
+    files: dict[str, bytes] = {}
     for name, image in images.items():
-        image.convert("RGB").save(folder / name, format="PNG")
+        buffer = io.BytesIO()
+        image.convert("RGB").save(buffer, format="PNG")
+        files[name] = buffer.getvalue()
+    if result.copy_ is not None:
+        files["copy.json"] = _json_bytes(result.copy_.model_dump(mode="json"))
 
-    copy_ = result.copy_
-    if copy_ is not None:
-        _write_json(folder / "copy.json", copy_.model_dump(mode="json"))
-
-    files = sorted([*images, *(["copy.json"] if copy_ is not None else [])])
-    result.files = [Path(name) for name in files]
-    metadata = result.model_dump(mode="json", by_alias=True, exclude={"copy_"})
+    listed = result.model_copy(update={"files": [Path(name) for name in sorted(files)]})
+    metadata = listed.model_dump(mode="json", by_alias=True, exclude={"copy_"})
     metadata["totals"] = usage_totals(result.usage)
-    _write_json(folder / "metadata.json", metadata)  # last: its presence = a complete folder
-    return folder
+    files["metadata.json"] = _json_bytes(metadata)
+    return files
+
+
+def campaign_zip(result: CampaignResult, creatives: CreativeSet) -> bytes:
+    """The campaign as a .zip with the same Brand/Product/ layout as output/ (FR-13).
+    Built in memory: nothing is written to disk."""
+    product = result.product
+    prefix = (f"{slugify(product.brand_name, fallback='brand')}/"
+              f"{slugify(product.name, fallback=f'product_{product.id}')}/")
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for name, data in sorted(campaign_files(result, creatives).items()):
+            archive.writestr(prefix + name, data)
+    return buffer.getvalue()
 
 
 def usage_totals(usage: list[CallUsage]) -> dict:
@@ -127,5 +152,5 @@ def _remove_previous_files(folder: Path) -> None:
             path.unlink()
 
 
-def _write_json(path: Path, data: object) -> None:
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+def _json_bytes(data: object) -> bytes:
+    return json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")

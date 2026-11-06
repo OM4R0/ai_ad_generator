@@ -163,6 +163,23 @@ class BrandPatch(_Model):
         return v
 
 
+class BrandPdfDraft(BaseModel):
+    """What the LLM returns after reading a brand-guidelines PDF (prompt brand_pdf_v1).
+
+    Deliberately loose (plain strings, unknown keys ignored): each field is then
+    validated on its own by `brand_manager.patch_from_pdf`, so one bad value from
+    the LLM doesn't throw away the good ones.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    brand_name: str | None = None
+    brand_voice: str | None = None
+    brand_colors: list[str] = Field(default_factory=list)
+    target_market: str | None = None
+    language: str | None = None
+
+
 # --------------------------------------------------------------------------- #
 # [3] Vision
 # --------------------------------------------------------------------------- #

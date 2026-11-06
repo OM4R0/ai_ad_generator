@@ -178,3 +178,22 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - Keep the evidence-based model order for the backup.
 - The 10-product live batch runs on Friday after the Gemini daily reset (midnight Pacific time); the video is recorded from the cache.
 
+## Phase 7 — Dashboard (test-first)
+
+### My decisions before it started
+- **#23 backpack (small "LEVELS" logo):** keep it in the demo; the warning shows the multimodal check working (ADR-005).
+- **No FastAPI, no login, no Docker:** I asked whether we needed them. The AI explained that Streamlit calls the pipeline directly and the task is a local tool; I agreed to keep it simple and spend the time on what is graded.
+
+### What was built
+- `core/dashboard.py`: the dashboard's decisions without UI (Arabic RTL blocks with HTML escaping, demo-first product list, brand form → only-changed-fields patch, merging edits, cost rows, variant history, brand-PDF extraction with prompt `brand_pdf_v1`, one long-lived set of services).
+- `app.py`: drawing only (product, photo source, brand editor + PDF, Generate / New angle, feed A/B, story, carousel, captions, cost tab, Save, Download .zip).
+- `output_writer.campaign_files`: one source for the folder and the .zip.
+
+### How it was tested
+- **Unit tests first** for `core/dashboard.py` (24), then **UI tests first** with Streamlit's `AppTest` (19): the real `app.py`, run headless with a fake LLM.
+- **Found before coding, each turned into a failing test first:** a brand edit lost after two regenerates; a brand PDF applied to another brand's product; stale form values overriding the vision colours.
+- **Mutation check:** the AI broke the code in 3 places; each break was caught. One break also failed the Arabic test: without the product ID in the form key, one product's language would carry over to the next. A fourth bug the tests caught that nobody had predicted.
+- **Found by the UI tests in old code:** `load_catalog` crashed on a text path; fixed in the loader with its own test.
+- **Environment:** Streamlit was missing from the virtual environment although it is in `requirements.txt`; installed with `pip install -r requirements.txt`, exactly as a reviewer would.
+- **Real check:** real settings, real background removal, AI off: the app opened in 1.4 s, the Arabic backpack ad rendered in 4 s, Save wrote the brief's files, and `streamlit run app.py` served the page.
+- Total: **418 tests** (was 371).

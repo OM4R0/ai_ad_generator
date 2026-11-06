@@ -83,11 +83,11 @@ class LoadResult:
         return [self.by_id(i) for i in ids]
 
 
-def load_catalog(path: Path, project_root: Path | None = None) -> LoadResult:
+def load_catalog(path: Path | str, project_root: Path | None = None) -> LoadResult:
     """Load and validate the product catalog.
 
     Args:
-        path: the .xlsx (preferred) or .csv file.
+        path: the .xlsx (preferred) or .csv file (a Path or plain text).
         project_root: base folder that `Local Image Path` values are relative
             to. Defaults to the project root from `config.settings`, so the
             catalog file can live anywhere.
@@ -97,7 +97,7 @@ def load_catalog(path: Path, project_root: Path | None = None) -> LoadResult:
             required columns are missing.
     """
     root = project_root or PROJECT_ROOT
-    frame, source = _read_with_fallback(path)
+    frame, source = _read_with_fallback(Path(path))
 
     missing = REQUIRED_COLUMNS - set(frame.columns)
     if missing:
