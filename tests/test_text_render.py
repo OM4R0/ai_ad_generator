@@ -33,6 +33,36 @@ def test_arabic_is_shaped_and_reordered_latin_is_untouched():
     assert to_visual("Hello world") == "Hello world"
 
 
+class RecordingDraw:
+    """Stands in for ImageDraw: records the (display-order) text of each line drawn."""
+
+    def __init__(self):
+        self.lines: list[str] = []
+
+    def text(self, xy, text, **kwargs):
+        self.lines.append(text)
+
+
+def test_an_arabic_line_that_starts_with_a_latin_word_still_reads_right_to_left():
+    # Live run, product #23: the headline's 2nd line was "1680D المقاوم للمطر ولابتوب 16".
+    # Its first letter is Latin, so the bidi library guessed a LEFT-to-right line and
+    # put "1680D" at the far left: an Arabic reader saw the words out of order.
+    assert to_visual("1680D المقاوم للمطر", rtl=True).endswith("1680D")   # starts at the right
+    block = fit_text("1680D المقاوم للمطر", Language.AR, "bold", max_width=2000,
+                     max_lines=1, max_size=40, min_size=40)
+    draw = RecordingDraw()
+    draw_text_block(draw, block, x=0, y=0, width=2000, align="right", fill="white")
+    assert draw.lines[0].endswith("1680D")
+
+
+def test_a_latin_line_in_an_english_ad_is_never_reordered():
+    block = fit_text("1680D nylon, 16 inch", Language.EN, "bold", max_width=2000,
+                     max_lines=1, max_size=40, min_size=40)
+    draw = RecordingDraw()
+    draw_text_block(draw, block, x=0, y=0, width=2000, align="left", fill="white")
+    assert draw.lines == ["1680D nylon, 16 inch"]
+
+
 def test_fonts_exist_for_every_language():
     for language in Language:
         assert font_for(language, "bold", 40).getlength("Abc") > 0

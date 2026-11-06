@@ -149,3 +149,19 @@ def test_rate_limit_answers_wait_and_retry_instead_of_giving_up(tmp_path, status
     result = _gen(server, tmp_path, sleeps=sleeps).generate("x", (100, 100), ["#000000"])
     assert result.source == "pollinations"
     assert any(s >= 15 for s in sleeps)
+
+
+# --------------------------------------------------------------------------- #
+# AI product photo (dashboard option "AI-generated photo")
+# --------------------------------------------------------------------------- #
+
+def test_a_product_photo_asks_for_the_product_and_never_reuses_a_cached_scene(tmp_path):
+    from core.scene_generator import PRODUCT_PHOTO_RAILS
+    server = Server(_ok(), _ok())
+    gen = _gen(server, tmp_path)
+    gen.generate("over-ear headphones", (512, 512), [])                         # a scene
+    photo = gen.generate("over-ear headphones", (512, 512), [], rails=PRODUCT_PHOTO_RAILS)
+    assert len(server.urls) == 2                       # same prompt, but not the scene's file
+    assert "no%20product" in server.urls[0] and "no%20product" not in server.urls[1]
+    assert "studio%20product%20photo" in server.urls[1] and "no%20text" in server.urls[1]
+    assert photo.source == "pollinations"

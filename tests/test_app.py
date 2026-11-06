@@ -18,7 +18,7 @@ from core import dashboard
 from core.pipeline import Services
 from core.scene_generator import SceneGenerator
 from core.schemas import BrandPdfDraft, CallUsage
-from tests.test_pipeline import VISION, ScriptedLLM
+from tests.test_pipeline import VISION, PhotoScenes, ScriptedLLM
 from tests.test_visual_engine import fake_remover
 
 APP = str(PROJECT_ROOT / "app.py")
@@ -36,19 +36,31 @@ class DashboardLLM(ScriptedLLM):
         return super().complete_json(**kwargs)
 
 
+class ReplayLLM(DashboardLLM):
+    """Every answer comes from the cache (costs nothing, so it must not count)."""
+
+    def complete_json(self, **kwargs):
+        value, usage = super().complete_json(**kwargs)
+        return value, usage.model_copy(update={"cached": True})
+
+
 @pytest.fixture
 def make_app(tmp_path, monkeypatch):
-    """Build an AppTest with fake services. Returns (app, llm, settings)."""
-    def build(llm=None, **settings_changes):
+    """Build an AppTest with fake services. Returns (app, llm, settings).
+    Each test gets its own rate limiter: the real one is shared by the whole server."""
+    def build(llm=None, limiter=None, scenes=None, **settings_changes):
         settings = replace(Settings(), output_dir=tmp_path / "output", cache_dir=tmp_path / "cache",
                            llm_api_key="test-key", vision_model="vision-m", copy_model="copy-m",
                            fallback_api_key="", fallback_models=[])
         settings = replace(settings, **settings_changes)
         llm = llm or DashboardLLM()
         services = Services(settings=settings, llm=llm,
-                            scenes=SceneGenerator("none", cache_dir=tmp_path), remover=fake_remover)
+                            scenes=scenes or SceneGenerator("none", cache_dir=tmp_path),
+                            remover=fake_remover)
+        limiter = limiter or dashboard.RateLimiter()
         monkeypatch.setattr(dashboard, "load_settings", lambda: settings)
         monkeypatch.setattr(dashboard, "services_for", lambda s, *, ai, remover=None: services)
+        monkeypatch.setattr(dashboard, "ai_limiter", lambda: limiter)
         app = AppTest.from_file(APP, default_timeout=120)
         app.run()
         return app, llm, settings
@@ -106,8 +118,30 @@ def test_a3_generate_shows_feed_a_and_b_the_story_and_every_carousel_card(make_a
     _no_crash(app)
     assert not app.error
     run = _variants(app)[-1].run
-    assert len(app.image) == 2 + 1 + len(run.creatives.carousel)
+    # photo + feed A/B + story + carousel cards + Instagram preview
+    assert len(app.image) == 1 + 2 + 1 + len(run.creatives.carousel) + 1
     assert [c["step"] for c in llm.calls] == ["vision", "copy"]
+
+
+def _captions(app) -> list[str]:
+    return [caption for image in app.image for caption in image.captions]
+
+
+def test_a3_the_product_photo_is_shown_side_by_side_with_the_ads(make_app):
+    # Brief, "Live Preview": product image side-by-side with generated ad creatives.
+    app, _, _ = make_app()
+    _generate(app, 13)
+    captions = _captions(app)
+    photo = next(i for i, c in enumerate(captions) if c.startswith("Product photo"))
+    assert captions[photo + 1].startswith("A ·") and captions[photo + 2].startswith("B ·")
+
+
+def test_a3_the_instagram_preview_tab_shows_the_ad_inside_a_post(make_app):
+    # Bonus: "Social Mockup Preview".
+    app, _, _ = make_app()
+    _generate(app, 13)
+    assert "Instagram preview" in [tab.label for tab in app.tabs]
+    assert any("Instagram" in c for c in _captions(app))
 
 
 def test_a4_arabic_copy_is_shown_right_to_left(make_app):
@@ -168,6 +202,15 @@ def test_a9_an_uploaded_photo_replaces_the_catalog_photo(make_app):
     assert llm.calls[0]["image"].size == (600, 400)
 
 
+def test_a9_the_ai_can_paint_the_product_photo(make_app, tmp_path):
+    app, _, _ = make_app(scenes=PhotoScenes(tmp_path))
+    app.radio(key="image_source").set_value("AI-generated photo").run()
+    _generate(app, 13)
+    _no_crash(app)
+    assert _variants(app)[-1].run.result.image_source == "ai"
+    assert any("AI-generated" in w.value for w in app.warning)     # check before publishing
+
+
 def test_a10_a_broken_upload_shows_an_error_not_a_crash(make_app):
     app, _, _ = make_app()
     app.radio(key="image_source").set_value("Upload a photo").run()
@@ -176,6 +219,7 @@ def test_a10_a_broken_upload_shows_an_error_not_a_crash(make_app):
     _no_crash(app)
     assert any("image" in e.value.lower() for e in app.error)
     assert _variants(app) == []
+    assert not app.button(key="generate").disabled      # a failure never leaves it locked
 
 
 # --------------------------------------------------------------------------- #
@@ -277,3 +321,58 @@ def _key(app, prefix: str) -> str:
     """The brand form's widget keys end with a version that changes when the brand
     it shows changes (e.g. after the vision step); the app stores the current one."""
     return f"{prefix}_{app.session_state['brand_form_key']}"
+
+
+# --------------------------------------------------------------------------- #
+# Double clicks and the AI rate limit (5 new AI ads per 10 minutes)
+# --------------------------------------------------------------------------- #
+
+def test_a18_the_buttons_are_locked_while_an_ad_is_being_made(make_app, monkeypatch):
+    # A second click during a generation would start a second one and spend quota.
+    from streamlit.delta_generator import DeltaGenerator
+    events: list[tuple[str, bool | None]] = []
+    real_button = DeltaGenerator.button
+
+    def spy(self, label, *args, **kwargs):
+        if kwargs.get("key") == "generate":
+            events.append(("drawn", bool(kwargs.get("disabled"))))
+        return real_button(self, label, *args, **kwargs)
+
+    monkeypatch.setattr(DeltaGenerator, "button", spy)
+    llm = DashboardLLM()
+    ask = llm.complete_json
+    llm.complete_json = lambda **kw: events.append(("ai", None)) or ask(**kw)
+    app, _, _ = make_app(llm)
+    _generate(app, 13)
+    _no_crash(app)
+    first_ai_call = events.index(("ai", None))
+    assert [e for e in events[:first_ai_call] if e[0] == "drawn"][-1] == ("drawn", True)
+    assert events[-1] == ("drawn", False)                   # unlocked when it's done
+    assert not app.button(key="generate").disabled
+
+
+def test_a19_after_the_limit_generate_says_when_to_retry_and_calls_no_ai(make_app):
+    app, llm, _ = make_app(limiter=dashboard.RateLimiter(limit=1, window_s=600))
+    _generate(app, 13)
+    calls = len(llm.calls)
+    app.button(key="regenerate").click().run()
+    _no_crash(app)
+    assert len(llm.calls) == calls                            # no new request
+    assert len(_variants(app)) == 1
+    assert any("limit" in w.value.lower() and "min" in w.value for w in app.warning)
+    assert not app.button(key="generate").disabled
+
+
+def test_a19_answers_from_the_cache_do_not_count(make_app):
+    app, _, _ = make_app(ReplayLLM(), limiter=dashboard.RateLimiter(limit=1, window_s=600))
+    _generate(app, 13)
+    app.button(key="regenerate").click().run()
+    assert len(_variants(app)) == 2
+
+
+def test_a19_with_ai_off_the_limit_does_not_apply(make_app):
+    app, _, _ = make_app(limiter=dashboard.RateLimiter(limit=1, window_s=600))
+    _generate(app, 13)
+    app.toggle(key="use_ai").set_value(False).run()
+    app.button(key="regenerate").click().run()
+    assert len(_variants(app)) == 2 and not app.warning

@@ -30,6 +30,14 @@ SCENE_GUARD_RAILS = (
     ", empty background scene for a product advertisement, no product, no text, "
     "no people, no hands, no logos, no watermark, photorealistic, soft light, high detail"
 )
+# The dashboard's "AI-generated photo" option: the same service paints the PRODUCT
+# (on a plain background, so the cut-out works). Marked for a human check (ADR-001).
+PRODUCT_PHOTO_RAILS = (
+    ", professional studio product photo, the whole product centred on a plain light grey "
+    "background, nothing else in the frame, no text, no logos, no people, no hands, "
+    "no watermark, photorealistic, soft light, high detail"
+)
+PRODUCT_PHOTO_SIZE = (1024, 1024)
 ATTEMPTS = 3
 # Anonymous use is rate limited (~1 request per 5-15 s). Back-to-back requests got
 # HTTP 402 in the Phase 5 live run, while a single request later got 200.
@@ -69,19 +77,24 @@ class SceneGenerator:
         self._last_request_at: float | None = None
 
     def generate(
-        self, prompt: str, size: tuple[int, int], palette: list[str], seed: int = 0
+        self, prompt: str, size: tuple[int, int], palette: list[str], seed: int = 0,
+        *, rails: str = SCENE_GUARD_RAILS,
     ) -> SceneResult:
-        """An AI scene of exactly `size`, or the brand gradient if that isn't possible."""
+        """An AI scene of exactly `size`, or the brand gradient if that isn't possible.
+
+        rails: the fixed rules added to the prompt; PRODUCT_PHOTO_RAILS paints a
+        product photo instead of an empty scene.
+        """
         if self.provider == "none":
             return SceneResult(gradient_background(size, palette), "gradient")
 
-        cache_file = self._cache_file(prompt, size, seed)
+        cache_file = self._cache_file(prompt, size, seed, rails)
         if cache_file and cache_file.exists():
             with Image.open(cache_file) as cached:
                 return SceneResult(cached.convert("RGB"), "cache")
 
         try:
-            image = self._fetch(prompt, size, seed)
+            image = self._fetch(prompt, size, seed, rails)
         except _SceneError as exc:
             logger.warning("Scene fallback (gradient): %s", exc)
             return SceneResult(gradient_background(size, palette), "gradient",
@@ -93,10 +106,10 @@ class SceneGenerator:
 
     # ----------------------------------------------------------------- private
 
-    def _fetch(self, prompt: str, size: tuple[int, int], seed: int) -> Image.Image:
+    def _fetch(self, prompt: str, size: tuple[int, int], seed: int, rails: str) -> Image.Image:
         if self.provider != "pollinations":
             raise _SceneError(f"unknown image provider {self.provider!r}")
-        url = POLLINATIONS_URL + quote(prompt.strip() + SCENE_GUARD_RAILS, safe="")
+        url = POLLINATIONS_URL + quote(prompt.strip() + rails, safe="")
         tall = (size[0], round(size[1] * (1 + WATERMARK_CROP)))
         params = {"width": tall[0], "height": tall[1], "seed": seed,
                   "nologo": "true", "model": "flux"}
@@ -142,10 +155,14 @@ class SceneGenerator:
                 self._sleep(remaining)
         self._last_request_at = time.monotonic()
 
-    def _cache_file(self, prompt: str, size: tuple[int, int], seed: int) -> Path | None:
+    def _cache_file(self, prompt: str, size: tuple[int, int], seed: int,
+                    rails: str = SCENE_GUARD_RAILS) -> Path | None:
         if self._cache_dir is None:
             return None
-        key = hashlib.sha256(f"{self.provider}|{prompt}|{size}|{seed}".encode()).hexdigest()[:24]
+        # Other rails = another picture for the same prompt. Scenes keep their old keys,
+        # so the backgrounds already cached from the live run are still found.
+        extra = "" if rails == SCENE_GUARD_RAILS else f"|{rails}"
+        key = hashlib.sha256(f"{self.provider}|{prompt}|{size}|{seed}{extra}".encode()).hexdigest()[:24]
         return self._cache_dir / f"{key}.jpg"
 
 

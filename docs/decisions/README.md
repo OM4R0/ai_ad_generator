@@ -5,7 +5,7 @@ Status values: `Proposed` · `Accepted` · `Superseded by ADR-xxx`.
 
 | ADR | Decision | Status |
 |---|---|---|
-| [001](001-hybrid-product-visuals.md) | Hybrid visuals: real product photo + AI scene | Accepted |
+| [001](001-hybrid-product-visuals.md) | Hybrid visuals: real product photo + AI scene (an AI product photo only as a flagged option, Phase 8) | Accepted |
 | [002](002-streamlit-dashboard.md) | Streamlit for the dashboard | Accepted |
 | [003](003-llm-model-selection.md) | Gemini direct (one multimodal model) primary, OpenRouter fallback, one OpenAI-compatible client | Accepted (model ID confirmed in Phase 3) |
 | [004](004-rerun-behaviour.md) | CLI overwrites; dashboard keeps variants in session | Accepted |

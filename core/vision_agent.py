@@ -112,5 +112,5 @@ def photo_warnings(analysis: VisionAnalysis, product: Product) -> list[str]:
     others = foreign_brands(analysis, product.brand_name, product.name)
     if others:
         warnings.append(f"the photo shows another brand ({', '.join(others)}); "
-                        f"not publishable as a {product.brand_name} ad")
+                        f"not publishable as an ad for {product.brand_name}")
     return warnings

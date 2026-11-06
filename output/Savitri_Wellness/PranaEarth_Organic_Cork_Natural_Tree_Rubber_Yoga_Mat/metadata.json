@@ -1,0 +1,133 @@
+{
+  "product": {
+    "id": 30,
+    "name": "PranaEarth Organic Cork & Natural Tree Rubber Yoga Mat",
+    "brand_name": "Savitri Wellness",
+    "category": "Fitness & Sporting Gear",
+    "description": "سجادة يوجا وبيلاتس عضوية صديقة للبيئة مصنوعة من الفلين البرتغالي الطبيعي المضاد للبكتيريا ومطاط الأشجار المعزول لتوفير ثبات ودعم للمفاصل.",
+    "features": [
+      "طبقة فلين طبيعي عضوي تصبح أكثر تماسكاً ومقاومة للانزلاق كلما زاد التعرق",
+      "قاعدة مطاط طبيعي بسمك 5 مم تحمي الركبتين والمفاصل من قسوة الأرضيات",
+      "خطوط محفورة بالليزر للمساعدة على ضبط محاذاة واستقامة الجسم أثناء التمرين",
+      "مضادة طبيعياً للروائح والبكتيريا وخالية 100% من البلاستيك ومادة PVC الضارة",
+      "تتضمن حزام حمل قطني متين لسهولة التنقل"
+    ],
+    "target_audience": "ممارسي اليوجا، البيلاتس، التمارين المنزلية، عشاق المنتجات الطبيعية (20–60 سنة)",
+    "price_range": "$65 – $95",
+    "usp": "كلما تعرقت أكثر كلما زاد ثبات قبضتك — راحة وتوازن عضوي من قلب الطبيعة",
+    "tone": "Grounded, mindful, holistic",
+    "language": "ar",
+    "image_url": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\30_cork_yogamat.jpg"
+  },
+  "brand": {
+    "brand_name": "Savitri Wellness",
+    "brand_voice": "Grounded, mindful, holistic",
+    "brand_colors": [
+      "#2C3531",
+      "#8EA89D",
+      "#FFFFFF"
+    ],
+    "target_market": "ممارسي اليوجا، البيلاتس، التمارين المنزلية، عشاق المنتجات الطبيعية (20–60 سنة)",
+    "language": "ar",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "rolled yoga mats",
+    "dominant_colors": [
+      "#2C3531",
+      "#8EA89D",
+      "#594F4F",
+      "#9B5DE5"
+    ],
+    "materials_finish": [
+      "matte foam",
+      "smooth rubber"
+    ],
+    "mood": "organized, serene, active, minimal",
+    "visual_selling_points": [
+      "variety of colors available in rolled storage",
+      "neat storage solution for fitness equipment"
+    ],
+    "scene_prompt": "A minimalist studio space with soft natural morning light filtering through linen curtains onto a clean light wood floor, creating a peaceful and grounded atmosphere with ample copy space.",
+    "cutout_quality_hint": "busy background",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "multiple rolled yoga mats stored in white cubbies"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "carousel_slide_5.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1891,
+      "completion_tokens": 225,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004862,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1494,
+      "completion_tokens": 1508,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.015813,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [
+    "cut-out fell apart into separate pieces (largest piece 50%); used the framed photo"
+  ],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "framed",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.42,
+    "vision": 0.0,
+    "copy": 0.03,
+    "visuals": 2.49,
+    "total": 2.94
+  },
+  "created_at": "2026-11-06T22:58:32.703495Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3385,
+    "completion_tokens": 1733,
+    "estimated_cost_usd": 0.020675,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

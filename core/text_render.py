@@ -61,11 +61,17 @@ def contains_arabic(text: str) -> bool:
     return bool(_ARABIC_RE.search(text))
 
 
-def to_visual(text: str) -> str:
-    """Display form of a line: Arabic is shaped (joined) and reordered; other text unchanged."""
+def to_visual(text: str, rtl: bool | None = None) -> str:
+    """Display form of a line: Arabic is shaped (joined) and reordered; other text unchanged.
+
+    rtl: the direction of the ad (True for Arabic ads). Without it the bidi library
+    guesses from the line's first letter, and an Arabic line that starts with a Latin
+    word ("1680D المقاوم…", live run #23) came out left-to-right, words out of order.
+    """
     if not contains_arabic(text):
         return text
-    return get_display(arabic_reshaper.reshape(text))
+    base_dir = None if rtl is None else ("R" if rtl else "L")
+    return get_display(arabic_reshaper.reshape(text), base_dir=base_dir)
 
 
 def font_for(language: Language, weight: Weight, size: int, text: str = "") -> ImageFont.FreeTypeFont:
@@ -91,6 +97,7 @@ class TextBlock:
     size: int
     font: ImageFont.FreeTypeFont
     line_widths: list[float] = field(default_factory=list)
+    rtl: bool = False                      # the ad's direction: how each line is laid out
 
     @property
     def line_height(self) -> int:
@@ -122,18 +129,19 @@ def fit_text(
     and ends with an ellipsis. Words longer than a line are broken by characters.
     """
     text = strip_emoji(text)  # one paragraph, no emoji, collapsed whitespace
+    rtl = language.direction == "rtl"
     for size in range(max_size, min_size - 1, -step):
         font = font_for(language, weight, size, text)
         lines = _wrap(text, font, max_width)
         if len(lines) <= max_lines:
-            return _block(lines, size, font)
+            return _block(lines, size, font, rtl)
     font = font_for(language, weight, min_size, text)
     lines = _wrap(text, font, max_width)
-    return _block(_truncate(lines, max_lines, font, max_width), min_size, font)
+    return _block(_truncate(lines, max_lines, font, max_width), min_size, font, rtl)
 
 
-def _block(lines: list[str], size: int, font: ImageFont.FreeTypeFont) -> TextBlock:
-    return TextBlock(lines, size, font, [_width(line, font) for line in lines])
+def _block(lines: list[str], size: int, font: ImageFont.FreeTypeFont, rtl: bool) -> TextBlock:
+    return TextBlock(lines, size, font, [_width(line, font) for line in lines], rtl)
 
 
 def _width(line: str, font: ImageFont.FreeTypeFont) -> float:
@@ -200,7 +208,7 @@ def draw_text_block(
     """Draw the block inside the column [x, x+width]. Returns the box it occupies."""
     left, right = float("inf"), float("-inf")
     for i, line in enumerate(block.lines):
-        visual = to_visual(line)
+        visual = to_visual(line, rtl=block.rtl)
         line_width = block.font.getlength(visual)
         if align == "right":
             lx = x + width - line_width

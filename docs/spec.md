@@ -1,8 +1,8 @@
 # Spec — AI Ad Generation Workflow
 
-> **Status:** v0.3 — all decisions D-1..D-6 accepted by owner
+> **Status:** v0.4 — all decisions D-1..D-6 accepted by owner; Phase 8 additions (2026-11-07) marked below
 > **Owner:** Omar
-> **Source brief:** [brief.md](brief.md)
+> **Source brief:** the hiring task's brief (kept out of this repository)
 > **Process:** Spec-Driven Development. This spec is the contract. Code is written *against* it, and any change in scope is made here first, then in code.
 
 ---
@@ -76,7 +76,7 @@ E-commerce brands need a steady stream of ad variants (per product × per platfo
 Missing fields are filled in deterministically (e.g. colors from the dominant colors of the product image, a text logo from the brand name). Generation never fails because a brand field is missing.
 
 ### 4.3 Product image
-One of: local reference file · reference URL · user upload / pasted URL in the dashboard.
+One of: local reference file · reference URL · user upload / pasted URL in the dashboard · an **AI-generated product photo** (dashboard option, added in Phase 8; always flagged for a human check, see ADR-001).
 
 ## 5. Outputs
 
@@ -131,7 +131,7 @@ Each requirement has acceptance criteria (AC) that we can test.
 | **FR-10** | RTL | Arabic text in images is shaped (connected letters) and right-aligned; the dashboard renders Arabic RTL. |
 | **FR-11** | Output | Exact folder structure as in §5; reruns overwrite cleanly or version (D-4). |
 | **FR-12** | CLI batch | One command generates N products with no manual steps; prints a summary (success/fail/fallbacks/cost). |
-| **FR-13** | Dashboard | Product selector, image source choice, brand editor + PDF upload, side-by-side preview, carousel preview, regenerate, `.zip` export. |
+| **FR-13** | Dashboard | Product selector, image source choice (incl. an AI-generated photo), brand editor + PDF upload, side-by-side preview (the product photo next to the creatives), carousel preview, regenerate, `.zip` export. Generate is locked while an ad is being made. |
 | **FR-14** | Cost tracker | Shows tokens and estimated USD per product. |
 | **FR-15** | Social mockup | The creative is rendered inside a realistic Instagram feed frame. |
 
@@ -145,7 +145,7 @@ Each requirement has acceptance criteria (AC) that we can test.
 | **NFR-4 Structured LLM output** | All LLM responses are JSON validated against a schema, with retry on invalid output. |
 | **NFR-5 Code quality** | Type hints, modular `core/`, no global state, docstrings on public functions, clear errors. |
 | **NFR-6 Reproducibility** | `pip install -r requirements.txt` + `.env` is enough to run; no secrets in the repo. |
-| **NFR-7 Rate limits** | The batch respects free-tier rate limits (throttling + backoff). **At most 2 LLM calls per product** (vision + copy), and results are cached so reruns don't spend requests (ADR-003). |
+| **NFR-7 Rate limits** | The batch respects free-tier rate limits (throttling + backoff). **At most 2 LLM calls per product** (vision + copy), and results are cached so reruns don't spend requests (ADR-003). The dashboard allows at most **5 new AI ads per 10 minutes** (cached answers don't count). |
 
 ## 8. Copy quality bar (anti-cliché rules)
 
@@ -158,12 +158,12 @@ This bar is enforced in the prompts and checked when we review the outputs.
 
 ## 9. Verification (definition of done)
 
-- [ ] ≥ 10 products generated end-to-end via the CLI with no manual steps
-- [ ] ≥ 2 languages (English + Arabic minimum; target: all 5)
-- [ ] ≥ 2 formats (single feed/story + carousel)
-- [ ] Product image is visibly integrated in every creative
-- [ ] Dashboard: all FR-13 items demonstrated
-- [ ] README with setup + run commands; walkthrough video 3–5 min
+- [x] ≥ 10 products generated end-to-end via the CLI with no manual steps (10/10, live, 2026-11-07)
+- [x] ≥ 2 languages (English + Arabic minimum; target: all 5): EN, AR, FR in the demo; ES, DE supported
+- [x] ≥ 2 formats (single feed/story + carousel): feed A/B, story, carousel, Instagram mockup
+- [x] Product image is visibly integrated in every creative
+- [x] Dashboard: all FR-13 items, tested with Streamlit's `AppTest`
+- [x] README with setup + run commands · [ ] walkthrough video 3–5 min
 
 ## 10. Constraints & assumptions
 

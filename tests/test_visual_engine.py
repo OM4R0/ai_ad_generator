@@ -102,6 +102,53 @@ def test_the_cta_button_uses_the_brand_accent_colour(tmp_path):
     assert _close(pixel, _hex(brand.brand_colors[1]))
 
 
+BLUE = (20, 60, 230)
+
+
+def _logo(size=(400, 100)) -> Image.Image:
+    return Image.new("RGBA", size, (*BLUE, 255))
+
+
+def test_the_brand_logo_replaces_the_text_wordmark(tmp_path):
+    # design §7.5: "Logo: from logo_url if available, otherwise a text wordmark".
+    brand = resolve_brand(HEADPHONES)
+    copy = template_copy(HEADPHONES, brand)
+    photo = Image.open(HEADPHONES.image_path).convert("RGB")
+    result = build_creatives(HEADPHONES, brand, copy, photo,
+                             SceneGenerator("none", cache_dir=tmp_path), scene_prompt="studio",
+                             remover=fake_remover, logo=_logo())
+    box = result.layouts["feed_a"].text_boxes[0]                 # where the wordmark was
+    assert _close(result.feed_variants[0].getpixel((box[0] + 5, box[1] + 5)), BLUE)
+    assert box[3] - box[1] <= 64                                  # small, like a wordmark
+    story = result.layouts["story"].text_boxes[0]
+    assert _close(result.story.getpixel((story[0] + 5, story[1] + 5)), BLUE)
+
+
+def test_an_arabic_ad_puts_the_logo_on_the_right(tmp_path):
+    brand = resolve_brand(OUD)
+    copy = template_copy(OUD, brand)
+    photo = Image.open(OUD.image_path).convert("RGB")
+    result = build_creatives(OUD, brand, copy, photo, SceneGenerator("none", cache_dir=tmp_path),
+                             scene_prompt="studio", remover=fake_remover, logo=_logo())
+    box = result.layouts["feed_a"].text_boxes[0]
+    assert abs(box[2] - (FEED_SIZE[0] - MARGIN)) <= 1
+
+
+def test_the_instagram_mockup_is_made_from_feed_a(tmp_path):
+    # FR-15: the preview shows the real creative, not a copy drawn separately.
+    from core.mockup import HEADER_H
+    result, _, _ = _build(HEADPHONES, tmp_path)
+    media = result.mockup.crop((0, HEADER_H, FEED_SIZE[0], HEADER_H + FEED_SIZE[1]))
+    assert media.tobytes() == result.feed_variants[0].tobytes()
+
+
+def test_the_product_photo_is_kept_for_the_side_by_side_preview(tmp_path):
+    # FR-13: "product image side-by-side with generated ad creatives".
+    result, _, _ = _build(HEADPHONES, tmp_path)
+    with Image.open(HEADPHONES.image_path) as original:
+        assert result.photo.size == original.size
+
+
 @pytest.mark.parametrize("remover", [broken_remover, empty_remover])
 def test_a_failed_cutout_falls_back_to_a_framed_photo(tmp_path, remover):
     result, _, _ = _build(HEADPHONES, tmp_path, remover=remover)

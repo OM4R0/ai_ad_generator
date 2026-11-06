@@ -10,8 +10,9 @@ import pytest
 from config.settings import PROJECT_ROOT, Settings
 from core.brand_manager import patch_from_pdf, resolve_brand
 from core.dashboard import (
-    Variant, add_variant, brand_patch_from_form, cost_rows, make_pdf_extractor, merge_patches,
-    next_variation, product_choices, product_label, rtl_block, services_for,
+    AI_LIMIT, AI_WINDOW_S, RateLimiter, Variant, add_variant, brand_patch_from_form, cost_rows,
+    make_pdf_extractor, merge_patches, next_variation, product_choices, product_label,
+    rtl_block, services_for, used_live_ai,
 )
 from core.excel_loader import load_catalog
 from core.llm_client import LLMError
@@ -227,3 +228,48 @@ def test_d7_asking_twice_returns_the_same_services(tmp_path):
                        vision_model="m", copy_model="m")
     assert services_for(settings, ai=True) is services_for(settings, ai=True)
     assert services_for(settings, ai=True) is not services_for(settings, ai=False)
+
+
+# --------------------------------------------------------------------------- #
+# Rate limit: at most 5 NEW AI ads per 10 minutes, for the whole server
+# --------------------------------------------------------------------------- #
+
+class FakeClock:
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+def test_d8_the_default_is_5_new_ai_ads_per_10_minutes():
+    limiter = RateLimiter()
+    assert (limiter.limit, limiter.window_s) == (AI_LIMIT, AI_WINDOW_S) == (5, 600)
+
+
+def test_d8_the_limiter_allows_the_limit_then_says_how_long_to_wait():
+    clock = FakeClock()
+    limiter = RateLimiter(limit=2, window_s=600, clock=clock)
+    assert limiter.wait_s() == 0
+    limiter.record()
+    clock.now += 100
+    limiter.record()
+    assert limiter.wait_s() == pytest.approx(500)       # the first one expires at t=1600
+
+
+def test_d8_the_window_slides_old_ads_stop_counting():
+    clock = FakeClock()
+    limiter = RateLimiter(limit=1, window_s=600, clock=clock)
+    limiter.record()
+    clock.now += 599
+    assert limiter.wait_s() == pytest.approx(1)
+    clock.now += 1
+    assert limiter.wait_s() == 0
+
+
+def test_d9_only_live_ai_calls_count_cached_answers_are_free():
+    live = CallUsage(step="copy", provider="gemini", model="m")
+    replay = live.model_copy(update={"cached": True})
+    assert used_live_ai(CampaignResult(product=HEADPHONES, brand=BASE, usage=[replay, live]))
+    assert not used_live_ai(CampaignResult(product=HEADPHONES, brand=BASE, usage=[replay]))
+    assert not used_live_ai(CampaignResult(product=HEADPHONES, brand=BASE))  # template copy

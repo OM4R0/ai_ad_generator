@@ -1,0 +1,133 @@
+{
+  "product": {
+    "id": 23,
+    "name": "NomadPro Waterproof 16-inch Laptop Backpack",
+    "brand_name": "UrbanNomad Gear",
+    "category": "Bags & Leather Goods",
+    "description": "حقيبة ظهر ذكية للأعمال والسفر مصنوعة من قماش باليستي مقاوم للماء والتمزق مع جيب مبطن للابتوب 16 بوصة ومنفذ شحن USB وفتح مسطح 180 درجة.",
+    "features": [
+      "قماش نايلون باليستي 1680D مقاوم للماء مع سحابات YKK محكمة",
+      "حجرة مخصصة ومبطنة بالفرو لحماية أجهزة اللابتوب حتى مقاس 16 بوصة",
+      "فتح مسطح بزاوية 180 درجة لتسهيل التفتيش في المطارات بسرعة",
+      "منفذ شحن خارجي ذكي USB-C لتوصيل الباور بانك واستخدام الهاتف",
+      "حزام لتثبيت الحقيبة على حقائب السفر وجيب خلفي سري مضاد للسرقة"
+    ],
+    "target_audience": "المبرمجين، موظفي الشركات، رجال الأعمال، الرحالة الرقميين (22–50 سنة)",
+    "price_range": "$89 – $139",
+    "usp": "الحقيبة المتينة التي تحمي أجهزتك الثمينة في أي طقس وتجعل تنقلك سلساً ومنظماً",
+    "tone": "Professional, rugged, smart",
+    "language": "ar",
+    "image_url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\23_laptop_backpack.jpg"
+  },
+  "brand": {
+    "brand_name": "UrbanNomad Gear",
+    "brand_voice": "Professional, rugged, smart",
+    "brand_colors": [
+      "#111318",
+      "#FFCC00",
+      "#FFFFFF"
+    ],
+    "target_market": "المبرمجين، موظفي الشركات، رجال الأعمال، الرحالة الرقميين (22–50 سنة)",
+    "language": "ar",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "laptop backpack",
+    "dominant_colors": [
+      "#111318",
+      "#FFCC00"
+    ],
+    "materials_finish": [
+      "woven fabric",
+      "matte fabric"
+    ],
+    "mood": "Professional, minimalist, rugged, clean",
+    "visual_selling_points": [
+      "Clean structural shape",
+      "Front zipper pocket",
+      "Top grab handle"
+    ],
+    "scene_prompt": "Minimalist architectural concrete surface with soft natural morning sunlight casting subtle shadows, creating a professional and clean backdrop with generous empty space in the center.",
+    "cutout_quality_hint": "clean",
+    "visible_brands": [
+      "LEVELS"
+    ],
+    "photo_matches_product": true,
+    "photo_shows": "a dark backpack on a floor"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1887,
+      "completion_tokens": 206,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004685,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1490,
+      "completion_tokens": 1466,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.015429,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [
+    "the photo shows another brand (LEVELS); not publishable as an ad for UrbanNomad Gear"
+  ],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.3,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 1.85,
+    "total": 2.16
+  },
+  "created_at": "2026-11-06T22:58:29.067799Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3377,
+    "completion_tokens": 1672,
+    "estimated_cost_usd": 0.020114,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

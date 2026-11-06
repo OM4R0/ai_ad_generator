@@ -1,0 +1,93 @@
+{
+  "variants": [
+    {
+      "angle": "pain_point",
+      "headline": "Un cabas en cuir Saffiano italien conçu pour votre ordinateur 14\"",
+      "hook": "Marre des sacs qui s'abîment au moindre choc entre deux réunions ?",
+      "primary_text": "Entre les transports, les rendez-vous clients et le rythme du quotidien, votre sac subit un véritable marathon. Le cabas Milano en cuir Saffiano italien résiste aux rayures et protège votre ordinateur 14\" en toute sécurité. Conservez une allure structurée du matin au soir, sans la moindre trace d'usure.",
+      "bullets": [
+        "Cuir Saffiano italien véritable résistant aux éraflures et à la pluie",
+        "Compartiment zippé sur mesure pour ordinateur 14\" et agenda",
+        "Anses renforcées de 25 cm pour un porté épaule très confortable"
+      ],
+      "cta": "Commander le cabas"
+    },
+    {
+      "angle": "emotional",
+      "headline": "Cabas Milano en cuir Saffiano : l'élégance italienne dès 175 $",
+      "hook": "Entrez dans chaque réunion avec l'assurance d'une allure impeccable et structurée.",
+      "primary_text": "Votre style affirme vos ambitions avant même le premier mot. Conçu pour les femmes d'influence, le cabas Milano allie une silhouette géométrique précise à des finitions dorées haut de gamme. Affirmant votre prestance au quotidien, il incarne l'alliance parfaite du pouvoir et du chic.",
+      "bullets": [
+        "Silhouette architecturale aux finitions dorées polies",
+        "Pieds métalliques sous la base pour protéger le cuir au sol",
+        "Poches intérieures dédiées pour smartphone et essentiels"
+      ],
+      "cta": "Découvrir la collection"
+    }
+  ],
+  "carousel": [
+    {
+      "title": "L'élégance à l'épreuve de votre rythme",
+      "body": "Un cabas structuré en cuir Saffiano italien qui traverse vos journées sans une égratignure."
+    },
+    {
+      "title": "Compartiment ordinateur 14\"",
+      "body": "Espace intérieur zippé et sécurisé pour transporter vos documents et votre matériel avec clarté."
+    },
+    {
+      "title": "Finitions de haute maroquinerie",
+      "body": "Anses renforcées avec hauteur de 25 cm et pieds métalliques de protection sous la base."
+    },
+    {
+      "title": "Commandez votre cabas Milano",
+      "body": "Disponible dès 175 $ sur notre boutique Aurelia Milano."
+    }
+  ],
+  "captions": {
+    "instagram": {
+      "text": "Vos journées de 8h à 20h méritent un sac capable de tout transporter sans jamais perdre son maintien.\n\nLe cabas Milano réunit la robustesse du cuir Saffiano italien et l'organisation d'un compartiment zippé pour ordinateur 14\". Vos dossiers restent protégés, vos affaires organisées et votre silhouette parfaite.\n\nUn design pensé pour les femmes qui ne font aucun compromis entre fonction et style.",
+      "hashtags": [
+        "#SacEnCuir",
+        "#MaroquinerieItalienne",
+        "#FemmeActive",
+        "#SacCabas",
+        "#WorkingGirlStyle",
+        "#CuirSaffiano",
+        "#SacOrdinateur",
+        "#AureliaMilano",
+        "#ModeChic",
+        "#LookProfessionnel"
+      ]
+    },
+    "tiktok": {
+      "text": "Le sac qui résiste VRAIMENT aux rayures de clés et aux journées de 12h 💼 Ordinateur 14\", agenda, maquillage : tout rentre sans déformer le cuir.",
+      "hashtags": [
+        "#WorkingGirl",
+        "#CuirSaffiano",
+        "#SacOrdinateur",
+        "#SacCabas",
+        "#AureliaMilano"
+      ]
+    },
+    "facebook": {
+      "text": "Ne choisissez plus entre élégance et praticité pour vos journées de travail. Le cabas Milano d'Aurelia Milano est taillé dans un cuir Saffiano italien résistant aux éraflures et à la pluie.\n\nSon espace intérieur accueille aisément votre ordinateur 14\", vos dossiers et vos essentiels, le tout protégé par des poches zippées et des pieds métalliques sous la base.\n\nDisponible dès 175 $ sur notre site officiel.",
+      "hashtags": [
+        "#FemmeDirigeante",
+        "#MaroquinerieItalienne",
+        "#SacCabas"
+      ]
+    },
+    "linkedin": {
+      "text": "L'allure professionnelle passe aussi par la qualité des accessoires qui vous accompagnent au quotidien.\n\nLe cabas Milano par Aurelia Milano a été conçu pour répondre aux exigences des femmes actives : cuir Saffiano italien imperméable, protection intégrée pour ordinateur 14\" et structure architecturale qui conserve sa tenue.\n\nUn investissement durable et fonctionnel pour accompagner vos responsabilités.",
+      "hashtags": [
+        "#LeadershipAuFeminin",
+        "#FemmesDirigeantes",
+        "#StyleProfessionnel",
+        "#Maroquinerie",
+        "#AureliaMilano"
+      ]
+    }
+  },
+  "language": "fr",
+  "direction": "ltr"
+}

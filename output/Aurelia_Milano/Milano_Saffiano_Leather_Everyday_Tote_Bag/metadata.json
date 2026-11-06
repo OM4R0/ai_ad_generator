@@ -1,0 +1,131 @@
+{
+  "product": {
+    "id": 24,
+    "name": "Milano Saffiano Leather Everyday Tote Bag",
+    "brand_name": "Aurelia Milano",
+    "category": "Bags & Leather Goods",
+    "description": "Sac cabas féminin structuré en cuir Saffiano italien résistant aux rayures, avec finitions dorées polies et compartiment central zippé pour ordinateur portable.",
+    "features": [
+      "Cuir Saffiano italien véritable, imperméable et résistant aux éraflures",
+      "Accastillage doré poli et pieds métalliques de protection sous la base",
+      "Grand espace intérieur accueillant un ordinateur 14\", agenda et maquillage",
+      "Anses doubles renforcées avec hauteur de portée confortable de 25 cm",
+      "Poche zippée sécurisée intérieure et deux poches plaquées pour smartphone"
+    ],
+    "target_audience": "Femmes actives, avocates, dirigeantes et passionnées de mode chic (24–55 ans)",
+    "price_range": "$175 – $260",
+    "usp": "L’élégance architecturale italienne qui résiste à vos journées les plus intenses sans une égratignure",
+    "tone": "Elegant, empowering, chic",
+    "language": "fr",
+    "image_url": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\24_saffiano_tote.jpg"
+  },
+  "brand": {
+    "brand_name": "Aurelia Milano",
+    "brand_voice": "Elegant, empowering, chic",
+    "brand_colors": [
+      "#E65C47",
+      "#111111"
+    ],
+    "target_market": "Femmes actives, avocates, dirigeantes et passionnées de mode chic (24–55 ans)",
+    "language": "fr",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "structured leather handbag",
+    "dominant_colors": [
+      "#E65C47"
+    ],
+    "materials_finish": [
+      "smooth leather",
+      "polished silver hardware"
+    ],
+    "mood": "luxurious, elegant, sophisticated, chic",
+    "visual_selling_points": [
+      "structured geometric silhouette",
+      "polished metallic closure with engraved branding",
+      "sturdy top handle with clean edge finishing"
+    ],
+    "scene_prompt": "Minimalist luxury showroom surface with soft warm diffused lighting and a neutral beige fabric backdrop, leaving ample empty space in the center.",
+    "cutout_quality_hint": "busy background",
+    "visible_brands": [
+      "Ferragamo"
+    ],
+    "photo_matches_product": true,
+    "photo_shows": "structured orange leather handbag with silver hardware"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1812,
+      "completion_tokens": 208,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.00459,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1216,
+      "completion_tokens": 1262,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.013182,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [
+    "the photo shows another brand (Ferragamo); not publishable as an ad for Aurelia Milano"
+  ],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.31,
+    "vision": 0.0,
+    "copy": 0.03,
+    "visuals": 2.15,
+    "total": 2.49
+  },
+  "created_at": "2026-11-06T22:58:39.602294Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3028,
+    "completion_tokens": 1470,
+    "estimated_cost_usd": 0.017772,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

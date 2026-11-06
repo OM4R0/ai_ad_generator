@@ -197,3 +197,31 @@ How I used an AI coding assistant (Claude Code) on this project: what I asked fo
 - **Environment:** Streamlit was missing from the virtual environment although it is in `requirements.txt`; installed with `pip install -r requirements.txt`, exactly as a reviewer would.
 - **Real check:** real settings, real background removal, AI off: the app opened in 1.4 s, the Arabic backpack ad rendered in 4 s, Save wrote the brief's files, and `streamlit run app.py` served the page.
 - Total: **418 tests** (was 371).
+
+## Phase 8 — Bonus, last gaps, README (2026-11-07, test-first)
+
+### What I asked for
+The last round before submitting: do the brief's remaining bonus, check the whole program against the task file line by line, add the simple rate limiter we had discussed ("5 requests every 10 minutes, or lock Generate until the answer comes back: whichever is simplest"), write the README the brief asks for, test everything hard, and push only the files that matter.
+
+### What the line-by-line check found
+- **Bonus "Social Mockup Preview" was missing** (carousel, A/B and cost tracker were done). New `core/mockup.py`: feed ad A pasted 1:1 into an Instagram post (avatar with the story ring, handle, *Sponsored*, a *Shop now* bar in the brand colour, the action icons, likes, and the caption cut after two lines with *… more*). Arabic ads get the mirrored layout and Arabic interface words. Saved as `mockup_instagram.png` and shown in a new dashboard tab.
+- **"Product image side-by-side with generated ad creatives"** (brief, live preview): the dashboard didn't show the source photo. The Feed tab now shows photo | A | B.
+- **"Let AI generate a new one"** (brief, image input) was missing. ADR-001 had rejected an AI-drawn product as the *default*; I accepted it as an explicit *option*, because only about a third of the catalog photos show the right product. It carries a warning to check it against the real product, and *New angle* keeps the same photo (ADR-001 amendment).
+- **`logo_url` was read but never drawn**, although `design.md` said it was. The logo now replaces the text wordmark (on the right for Arabic) and fills the mockup avatar; a logo that can't be loaded falls back to the wordmark with a note.
+- **The cost tracker showed $0.0000 "at the reference paid price"** in my live run: no price was set, and the estimate was frozen into each cache entry. Fixed with a default reference price (Gemini 3.5 Flash list price; input and output priced separately; set in `.env`), applied in the pipeline so cached answers use today's price. The 10 demo ads now show about $0.18 at the paid price ($0 actual), and the CLI shows the cost per product.
+- **Found while looking at the first mockup:** an Arabic headline line that starts with a Latin word ("1680D المقاوم للمطر…") was laid out left-to-right, so the words were out of order. The bidi library guesses the direction from the first letter; now the ad's direction is passed in. This affected the real Arabic demo ad (#23).
+- **A broken image link was silent** (it fell back to the catalog photo); now it's a fallback note with the reason.
+- Wording: "not publishable as a Aurelia Milano ad" became "as an ad for Aurelia Milano".
+
+### The rate limiter: what I chose
+Both ideas, because they solve different problems. *Generate* and *New angle* are **locked while an ad is being made**, so a double click can't start two. And at most **5 new AI ads per 10 minutes** for the whole server, because every tab spends the same API key. Only ads that made a live AI request count: cached answers are free, and with AI off there is no limit. It is kept in memory: a quota guard, not user accounts.
+
+### How it was tested
+- Every change started as a failing test. Highlights: the mockup (16 tests), the lock and the limit (10), the cost (5), the Arabic line direction (3), the AI photo (5), the logo (5).
+- **Mutation check:** 33 deliberate breaks of the new code; 32 were caught. The one not caught (`>=` instead of `>` at exactly 10 minutes) changes nothing that can be observed: both give a wait of 0 s.
+- **Live:** an AI photo for the kettle (#26, whose catalog photo is an iced coffee) came back in 7 s as a recognisable gooseneck kettle with one wrong detail, which is why the warning exists. The 10 demo products were then regenerated from the cache in 33 s with 0 requests.
+- Total: **462 tests** (was 418).
+
+### What goes to GitHub
+- The code, the tests, the docs that explain the system (spec, design, decisions, edge cases, this log), and the 10 demo campaigns in `output/`, so the results can be seen without running anything.
+- Kept out (`.gitignore`): my personal study notes (`interview-prep.md`, `how-to-present.md`, `code-map.md`, mentioned above) and the task brief itself.

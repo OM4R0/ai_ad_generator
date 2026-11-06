@@ -1,0 +1,97 @@
+{
+  "variants": [
+    {
+      "angle": "pain_point",
+      "headline": "Goodyear Welted Brogues in 100% Italian Calfskin",
+      "hook": "Cheap dress shoes break down after 6 months. Kingsman & Co. brogues are Goodyear welted to last decades.",
+      "primary_text": "Stiff factory soles leave your feet aching by noon. Built with a cushioned cork footbed and full-grain Italian calfskin, these brogues mold directly to your step. Get handcrafted luxury starting from $240.",
+      "bullets": [
+        "100% full-grain Italian calfskin with hand-burnished cognac finish",
+        "Resoleable Goodyear welt construction built for decades of wear",
+        "Cushioned cork inner footbed that custom-molds to your foot"
+      ],
+      "cta": "Shop Kingsman Brogues"
+    },
+    {
+      "angle": "emotional",
+      "headline": "Hand-Burnished Cognac Brogues from $240",
+      "hook": "Command the boardroom. Hand-stitched from full-grain Italian calfskin, these Wingtips define executive presence.",
+      "primary_text": "True presence requires no loud statements—just flawless craftsmanship. The hand-burnished cognac finish and classic wingtip perforations set an unmistakable standard. Step into footwear built for those who lead.",
+      "bullets": [
+        "Hand-burnished cognac finish with wingtip perforated detailing",
+        "100% full-grain Italian calfskin leather with waxed laces",
+        "Resoleable Goodyear welted leather sole for long-term wear"
+      ],
+      "cta": "Claim Your Pair"
+    }
+  ],
+  "carousel": [
+    {
+      "title": "Handcrafted Leather Brogues",
+      "body": "Built with 100% full-grain Italian calfskin and classic Goodyear welt construction."
+    },
+    {
+      "title": "Custom Cork Footbed",
+      "body": "The cushioned inner footbed molds to your foot over time for natural daily comfort."
+    },
+    {
+      "title": "Resoleable Goodyear Welt",
+      "body": "Traditional welted construction allows easy resoling so your shoes last for decades."
+    },
+    {
+      "title": "Hand-Burnished Cognac Finish",
+      "body": "Detailed wingtip perforations and rich tan leather deliver unmatched boardroom presence."
+    },
+    {
+      "title": "Shop Kingsman & Co.",
+      "body": "Step into timeless British craftsmanship from $240. Order your pair today."
+    }
+  ],
+  "captions": {
+    "instagram": {
+      "text": "Cheap dress shoes deteriorate fast and hurt your stride. The Oxford Heritage Brogues feature 100% full-grain Italian calfskin and a resoleable Goodyear welted sole.\n\nA cushioned cork footbed shapes to your foot over time, blending classic wingtip detailing with real comfort. Available from $240.",
+      "hashtags": [
+        "#MensStyle",
+        "#DressShoes",
+        "#GoodyearWelted",
+        "#Brogues",
+        "#LuxuryFootwear",
+        "#GentlemansStyle",
+        "#KingsmanAndCo",
+        "#MensFashion",
+        "#FullGrainLeather",
+        "#OxfordShoes"
+      ]
+    },
+    "tiktok": {
+      "text": "Stop buying dress shoes that ruin your feet after three months. 100% full-grain Italian calfskin, Goodyear welted, and resoleable. Handcrafted quality from $240. 👞✨",
+      "hashtags": [
+        "#menswear",
+        "#dressshoes",
+        "#leatherbrogues",
+        "#stylehacks",
+        "#goodyearwelt"
+      ]
+    },
+    "facebook": {
+      "text": "Most modern dress shoes rely on cheap glue and synthetic linings. Kingsman & Co. constructs the Oxford Heritage Brogue using 100% full-grain Italian calfskin and a classic Goodyear welt.\n\nThe cushioned cork footbed custom-molds to your footprint while the resoleable leather sole guarantees decades of wear. Hand-burnished cognac finish starting from $240.",
+      "hashtags": [
+        "#MensStyle",
+        "#ExecutiveFashion",
+        "#GoodyearWelt"
+      ]
+    },
+    "linkedin": {
+      "text": "Executive presence starts with attention to detail. The Oxford Heritage Handcrafted Brogues feature 100% full-grain Italian calfskin and traditional Goodyear welt construction.\n\nDesigned with a resoleable leather sole and a cushioned cork footbed, these brogues offer durability and comfort for long workdays. Crafted for leaders who value heritage quality.",
+      "hashtags": [
+        "#ExecutiveStyle",
+        "#Leadership",
+        "#Menswear",
+        "#Craftsmanship",
+        "#BusinessAttire"
+      ]
+    }
+  },
+  "language": "en",
+  "direction": "ltr"
+}

@@ -1,0 +1,129 @@
+{
+  "product": {
+    "id": 21,
+    "name": "PulseFit Active Slim AMOLED Fitness Tracker",
+    "brand_name": "PulseFit Tech",
+    "category": "Watches & Eyewear",
+    "description": "Bracelet connecté ultra-fin avec écran tactile incurvé AMOLED 1.47\", suivi continu du rythme cardiaque, oxygène sanguin SpO2 et 14 jours d’autonomie.",
+    "features": [
+      "Écran tactile couleur AMOLED 1.47\" haute définition toujours actif",
+      "Capteurs biométriques 24h/24 : rythme cardiaque, SpO2 et analyse du sommeil",
+      "Autonomie impressionnante de 14 jours par charge magnétique",
+      "Étanchéité 5 ATM (50 mètres) adaptée à la natation et aux intempéries",
+      "Plus de 120 modes sportifs avec détection automatique des exercices"
+    ],
+    "target_audience": "Sportifs réguliers, actifs soucieux de leur santé, étudiants (16–50 ans)",
+    "price_range": "$45 – $69",
+    "usp": "Toutes les mesures de santé et de forme d’une montre connectée dans un bracelet plume",
+    "tone": "Active, motivating, accessible",
+    "language": "fr",
+    "image_url": "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\21_fitness_band.jpg"
+  },
+  "brand": {
+    "brand_name": "PulseFit Tech",
+    "brand_voice": "Active, motivating, accessible",
+    "brand_colors": [
+      "#111111",
+      "#000000",
+      "#FFFFFF"
+    ],
+    "target_market": "Sportifs réguliers, actifs soucieux de leur santé, étudiants (16–50 ans)",
+    "language": "fr",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "fitness tracker",
+    "dominant_colors": [
+      "#111111",
+      "#000000"
+    ],
+    "materials_finish": [
+      "matte silicone band",
+      "glossy curved glass screen"
+    ],
+    "mood": "sleek, active, modern, minimalist",
+    "visual_selling_points": [
+      "slim and ergonomic design",
+      "clear digital display with time and status icons",
+      "perforated adjustable strap for comfort"
+    ],
+    "scene_prompt": "Minimalist athletic studio background with soft natural side lighting casting a gentle shadow on a clean neutral grey surface, creating an energetic and modern atmosphere.",
+    "cutout_quality_hint": "clean",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "black fitness tracker with digital screen"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1849,
+      "completion_tokens": 214,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004699,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1216,
+      "completion_tokens": 1262,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.013182,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.35,
+    "vision": 0.0,
+    "copy": 0.02,
+    "visuals": 2.12,
+    "total": 2.49
+  },
+  "created_at": "2026-11-06T22:58:36.165365Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3065,
+    "completion_tokens": 1476,
+    "estimated_cost_usd": 0.017881,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

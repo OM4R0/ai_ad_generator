@@ -38,7 +38,7 @@
 | # | Role | Where it runs | Default | Calls per product |
 |---|---|---|---|---|
 | 1 | **Multimodal LLM**: looks at the image (vision) **and** writes the copy | **Gemini** free tier (fallback: OpenRouter `:free`) | Gemini Flash, confirmed by benchmark (ADR-003) | 2 (vision + copy) |
-| 2 | **Image generator**: paints the scene/background only, never the product | Pollinations (FLUX, no key) | ADR-007 1 (the story scene; the square is cut from its middle, carousel reuses it) |
+| 2 | **Image generator**: paints the scene/background; paints the product only when the user picks *AI-generated photo* (flagged for a human check) | Pollinations (FLUX, no key) | ADR-007 | 1 (the story scene; the square is cut from its middle, carousel reuses it), +1 for an AI photo |
 | 3 | **Background remover**: cuts the product out of its photo | Local (`rembg`) | `u2net` / `isnet-general-use` | 0 API calls |
 
 So: **two external models + one small local model.**
@@ -61,7 +61,9 @@ core/
 ├── vision_agent.py     [3] image + product → VisionAnalysis               FR-3
 ├── copy_engine.py      [4] product + brand + vision → AdCopy              FR-5/6/7/9
 ├── scene_generator.py  AI background provider chain + gradient fallback   ADR-001
-├── visual_engine.py    [5] cut-out, composite, layout, text (incl. RTL)   FR-8/9/10/15
+├── visual_engine.py    [5] cut-out, composite, layout, text (incl. RTL)   FR-8/9/10
+├── mockup.py           the feed ad inside an Instagram post               FR-15
+├── text_render.py      fonts, Arabic shaping + RTL, fitting text in a box FR-10
 ├── output_writer.py    [6] folder structure, copy.json, metadata.json     FR-11
 ├── cache.py            on-disk cache of LLM / image results               NFR-7
 └── pipeline.py         orchestrates 1→6 for one product; batch helper     FR-12
@@ -182,11 +184,11 @@ Prompt design principles (from spec §8):
 2. Product cut-out scaled to ~55–65% of the safe area, with a soft shadow for depth.
 3. Text block (headline, hook, CTA button) in a reserved zone that never overlaps the product's bounding box.
 4. Brand colours: primary for overlays, accent for the CTA button; the text colour is picked by contrast check (WCAG ≥ 4.5:1) against the actual pixels behind it.
-5. Logo: from `logo_url` if available, otherwise a text wordmark of the brand name.
+5. Logo: from `logo_url` (a link, or a file path from the project root) if available, otherwise a text wordmark of the brand name. On the reading-start side (right for Arabic). A logo that can't be loaded → the wordmark, plus a fallback note.
 
 **Text fitting:** shrink the font size until the text fits the box in ≤ N lines, then wrap by words. This handles long German words and long Arabic phrases.
 
-**Arabic / RTL (FR-10):** `arabic-reshaper` connects the letters, and `python-bidi` sets the visual order; the text is right-aligned and the layout is mirrored (text block on the right). This works on Windows without system libraries (Pillow's `raqm` backend often isn't available there).
+**Arabic / RTL (FR-10):** `arabic-reshaper` connects the letters, and `python-bidi` sets the visual order; the text is right-aligned and the layout is mirrored (text block on the right). This works on Windows without system libraries (Pillow's `raqm` backend often isn't available there). The line direction is **passed in from the ad's language** (`base_dir`): left alone, the bidi library guesses it from the first letter, and an Arabic line starting with a Latin word ("1680D المقاوم…", live run #23) came out left-to-right.
 
 **Fonts:** a Latin sans + an Arabic font with OFL license, bundled in `assets/fonts/` so the output looks the same on every machine. Candidates: *Inter / Montserrat* + *Cairo / IBM Plex Sans Arabic* (chosen in Phase 5).
 
@@ -198,9 +200,12 @@ Prompt design principles (from spec §8):
 - Copy is shown in `<div dir="rtl|ltr">` blocks, HTML-escaped because the text comes from an LLM.
 - The `.zip` and the output folder are built by one function (`output_writer.campaign_files`), so they always hold the same files.
 - The brand PDF is read with prompt `brand_pdf_v1` (schema `BrandPdfDraft`, validated field by field); hex codes written in the PDF beat the LLM's colours.
+- The product photo is shown **side by side** with feed A and B (the brief's live preview); the photo options are the catalog photo, an AI-generated photo, an upload, or a link (a link that fails is reported).
+- **Generate / New angle are locked while an ad is being made:** the click sets `state.job` in a button callback, which Streamlit runs *before* redrawing, so in that run the buttons are drawn disabled; a `finally` always unlocks them.
+- **Rate limit:** at most 5 new AI ads per 10 minutes (`dashboard.RateLimiter`, a sliding window shared by every tab, because they all spend one API key). Only ads that made a live AI request count; with AI off there is no limit. In memory: a quota guard, not user accounts.
 - Tested with Streamlit's `AppTest` (no browser) and a fake LLM.
 
-**Mockup (FR-15):** the feed creative is placed inside a drawn Instagram post frame (header with avatar + brand name, action icons, caption preview). It is saved as `mockup_instagram.png` and also shown in the dashboard.
+**Mockup (FR-15, `core/mockup.py`):** feed ad A pasted 1:1 into a drawn Instagram post: avatar (the logo, or the brand's initials on its primary colour) with the story ring, a handle made from the brand name, *Sponsored*, the *Shop now* bar in the brand colour, the action icons (redrawn from Instagram's 24-unit outlines), likes, and the caption cut after **two lines** with *… more*, as Instagram does, which is why the hook must come first. Arabic ads are mirrored and use Arabic interface words. Saved as `mockup_instagram.png`, in the `.zip`, and shown in the dashboard's *Instagram preview* tab.
 
 ## 8. Error handling & resilience (NFR-2)
 
@@ -249,10 +254,11 @@ LLM_FALLBACK_MODELS=     # other models on the PRIMARY key, tried first (e.g. ge
 IMAGE_PROVIDER=pollinations   # ADR-007
 LLM_TIMEOUT_S=60
 MAX_REQUESTS_PER_MIN=10       # stays under every free tier's per-minute cap
-REFERENCE_PRICE_PER_MTOK=     # for the "equivalent paid cost" display (FR-14)
+REFERENCE_INPUT_PRICE_PER_MTOK=    # paid price for the cost estimate (FR-14);
+REFERENCE_OUTPUT_PRICE_PER_MTOK=   # empty = Gemini 3.5 Flash list price: 1.50 / 9.00
 ```
 
-**Cost tracker (FR-14):** both providers return token usage on every response. Free models really cost $0, so the dashboard shows both the **actual cost ($0)** and an **estimated cost at a reference paid model's price**, which shows what the system would cost at scale.
+**Cost tracker (FR-14):** both providers return token usage on every response. Free models really cost $0, so the dashboard shows both the **actual cost ($0)** and an **estimated cost at a reference paid model's price**, which shows what the system would cost at scale. Input and output tokens are priced separately, and the estimate is applied in the pipeline, so an answer replayed from the cache is priced at today's reference price (it used to keep the estimate of the day it was made). The CLI prints tokens and cost per product; the 10 demo ads come to about $0.18 at the paid price.
 
 ## 11. Dependencies
 
@@ -288,7 +294,7 @@ The OpenRouter API is OpenAI-compatible, but we call it with `httpx` directly: o
 | 5 | `image_source.py`, `scene_generator.py`, `visual_engine.py`, fonts | FR-2/8/9/10 |
 | 6 | `output_writer.py`, `cache.py`, `pipeline.py`, `main.py` → run the 10 products | FR-11/12, §9 |
 | 7 | `app.py` dashboard | FR-13 |
-| 8 | cost tracker, mockup polish | FR-14/15 |
+| 8 | Instagram mockup, cost fix, logo, AI-generated photo, rate limit + button lock, README | FR-13/14/15 |
 | 9 | README, final run, video | §9 |
 
 One commit (at least) per phase; each phase updates `ai-usage-log.md`.

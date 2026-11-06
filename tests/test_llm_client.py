@@ -24,7 +24,8 @@ def _settings(**overrides) -> Settings:
         llm_base_url="https://primary.test/v1/", llm_api_key="primary-key",
         vision_model="m-primary", copy_model="m-primary",
         fallback_base_url="https://fallback.test/v1", fallback_api_key="",
-        fallback_models=[], max_requests_per_min=0, reference_price_per_mtok=1.0,
+        fallback_models=[], max_requests_per_min=0,
+        reference_input_price_per_mtok=1.0, reference_output_price_per_mtok=1.0,
     )
     return replace(base, **overrides)
 
@@ -80,6 +81,15 @@ def test_success_returns_validated_model_and_usage():
     assert str(request.url) == "https://primary.test/v1/chat/completions"
     assert request.headers["Authorization"] == "Bearer primary-key"
     assert server.body(0)["model"] == "m-primary"
+
+
+def test_input_and_output_tokens_are_priced_separately():
+    # Output tokens cost ~6x more than input tokens on paid plans (FR-14).
+    server = FakeServer(_reply('{"word": "hi", "count": 2}', 1000, 500))
+    client, _ = _client(server, reference_input_price_per_mtok=2.0,
+                        reference_output_price_per_mtok=10.0)
+    _, usage = _ask(client)
+    assert usage.estimated_cost_usd == pytest.approx((1000 * 2.0 + 500 * 10.0) / 1_000_000)
 
 
 def test_image_is_sent_as_a_jpeg_data_url():

@@ -298,10 +298,18 @@ class LLMClient:
         self._last_request_at = time.monotonic()
 
     def _estimate_cost(self, usage: CallUsage) -> float:
-        # Free tier → the actual cost is $0; the estimate shows the cost at a
-        # reference paid price, i.e. what the system would cost at scale.
-        tokens = usage.prompt_tokens + usage.completion_tokens
-        return round(tokens / 1_000_000 * self._settings.reference_price_per_mtok, 6)
+        return reference_cost_usd(usage, self._settings)
+
+
+def reference_cost_usd(usage: CallUsage, settings: Settings) -> float:
+    """What this call would cost at the reference paid price (FR-14).
+
+    Free tiers really cost $0 (that is `actual_cost_usd`); this estimate shows what
+    the same work would cost at scale. Input and output tokens have different prices.
+    """
+    return round((usage.prompt_tokens * settings.reference_input_price_per_mtok
+                  + usage.completion_tokens * settings.reference_output_price_per_mtok)
+                 / 1_000_000, 6)
 
 
 # --------------------------------------------------------------------------- #

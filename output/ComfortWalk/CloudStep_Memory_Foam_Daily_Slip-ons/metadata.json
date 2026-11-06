@@ -1,0 +1,134 @@
+{
+  "product": {
+    "id": 3,
+    "name": "CloudStep Memory Foam Daily Slip-ons",
+    "brand_name": "ComfortWalk",
+    "category": "Footwear & Shoes",
+    "description": "حذاء مريح بتصميم عملي بتقنية الميموري فوم المزدوج وقماش مرن مسامي مصمم لمن يقفون لساعات طويلة دون إجهاد.",
+    "features": [
+      "فرش طبي من الميموري فوم الماص للصدمات",
+      "تصميم سهل الارتداء والخلع بدون أربطة",
+      "قماش شبكي قابل للتنفس والغسيل",
+      "نعل خارجي مرن مانع للانزلاق",
+      "مقدمة عريضة مريحة لأصابع القدم"
+    ],
+    "target_audience": "الأطباء، الممرضين، المعلمين، والعاملين لساعات طويلة (25–60 سنة)",
+    "price_range": "$55 – $85",
+    "usp": "الوقوف لمدة 12 ساعة متواصلة أصبح بملمس المشي على السحاب",
+    "tone": "Empathetic, reassuring, practical",
+    "language": "ar",
+    "image_url": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\03_cloudstep_slipons.jpg"
+  },
+  "brand": {
+    "brand_name": "ComfortWalk",
+    "brand_voice": "Empathetic, reassuring, practical",
+    "brand_colors": [
+      "#F5F5F0",
+      "#D85C5C",
+      "#111111"
+    ],
+    "target_market": "الأطباء، الممرضين، المعلمين، والعاملين لساعات طويلة (25–60 سنة)",
+    "language": "ar",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "multicolored sneakers",
+    "dominant_colors": [
+      "#F5F5F0",
+      "#D85C5C",
+      "#7AC9B8",
+      "#D98835"
+    ],
+    "materials_finish": [
+      "mesh fabric",
+      "leather overlays",
+      "rubber sole"
+    ],
+    "mood": "playful, vibrant, modern, casual",
+    "visual_selling_points": [
+      "dynamic multi-panel color blocking",
+      "breathable mesh upper texture",
+      "chunky supportive sole design"
+    ],
+    "scene_prompt": "A minimalist studio setting with soft warm lighting, casting gentle shadows on a clean white surface with an empty central display area.",
+    "cutout_quality_hint": "clean",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "two colorful sneakers arranged creatively on white blocks"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1804,
+      "completion_tokens": 231,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004785,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1411,
+      "completion_tokens": 1369,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.014438,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [
+    "cut-out fell apart into separate pieces (largest piece 57%); used the framed photo"
+  ],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "framed",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.28,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 1.9,
+    "total": 2.2
+  },
+  "created_at": "2026-11-06T22:58:23.438508Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3215,
+    "completion_tokens": 1600,
+    "estimated_cost_usd": 0.019223,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

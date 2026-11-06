@@ -1,0 +1,91 @@
+{
+  "variants": [
+    {
+      "angle": "pain_point",
+      "headline": "14 jours d'autonomie dans un bracelet de 1,47\"",
+      "hook": "Marre de recharger votre montre tous les soirs ? Passez à 14 jours d'autonomie continue sans compromis.",
+      "primary_text": "Les montres de sport imposantes et lourdes au poignet appartiennent au passé. Avec son écran AMOLED de 1,47\" incurvé et son bracelet en silicone perforé, le PulseFit Active Slim se fait oublier tout en mesurant votre rythme cardiaque, votre SpO2 et votre sommeil 24h/24. Suivez vos entraînements en toute liberté.",
+      "bullets": [
+        "14 jours d'autonomie par charge magnétique",
+        "Plus de 120 modes sportifs et étanchéité 5 ATM",
+        "Suivi continu du rythme cardiaque et SpO2 24h/24"
+      ],
+      "cta": "Commander dès 45 $"
+    },
+    {
+      "angle": "emotional",
+      "headline": "Écran AMOLED 1,47\" et suivi santé 24h/24 au poignet",
+      "hook": "Gardez le contrôle total de vos performances sportives, avec l'élégance d’un bracelet ultra-léger.",
+      "primary_text": "Atteignez vos objectifs avec un équipement à la hauteur de votre discipline. Le PulseFit Active Slim allie un verre incurvé brillant à un bracelet mat respirant pour un confort optimal jour et nuit. Visualisez vos données de santé en un coup d'œil sur l'écran toujours actif.",
+      "bullets": [
+        "Écran tactile couleur AMOLED 1,47\" toujours actif",
+        "Design ergonomique avec bracelet en silicone mat",
+        "Analyse précise du sommeil et de la récupération"
+      ],
+      "cta": "Découvrir le PulseFit"
+    }
+  ],
+  "carousel": [
+    {
+      "title": "Votre santé en temps réel",
+      "body": "Un bracelet ultra-fin doté d'un écran AMOLED 1,47\" avec 14 jours d'autonomie."
+    },
+    {
+      "title": "Suivi biométrique 24h/24",
+      "body": "Mesurez en continu votre rythme cardiaque, votre taux de SpO2 et la qualité de votre sommeil."
+    },
+    {
+      "title": "Étanche jusqu'à 50 mètres",
+      "body": "Profitez de plus de 120 modes sportifs adaptés à la natation et aux entraînements intenses."
+    },
+    {
+      "title": "Commandez le vôtre dès 45 $",
+      "body": "Profitez d'un suivi de forme complet et d'un confort optimal au quotidien."
+    }
+  ],
+  "captions": {
+    "instagram": {
+      "text": "Recharger sa montre toutes les 24 heures ? C'est terminé. ⚡\n\nLe PulseFit Active Slim intègre 14 jours d'autonomie et un suivi biométrique complet dans un design plume ultra-ergonomique.\n\nProfitez d'un écran AMOLED 1,47\" toujours actif et de 120 modes sportifs pour suivre tous vos progrès, du running à la natation. 🏊‍♂️\n\nDisponible dès 45 $.",
+      "hashtags": [
+        "#PulseFit",
+        "#MontreConnectee",
+        "#FitnessTracker",
+        "#RunningFrance",
+        "#SportEtSante",
+        "#Musculation",
+        "#VieActive",
+        "#StyleSportif"
+      ]
+    },
+    "tiktok": {
+      "text": "14 jours sans recharger sa montre de sport ? C'est possible. Écran AMOLED 1,47\", 120 modes sport, étanche 5 ATM. Disponible dès 45 $ ! 🔥",
+      "hashtags": [
+        "#PulseFit",
+        "#FitnessTracker",
+        "#SportTok",
+        "#Running",
+        "#AstuceSport"
+      ]
+    },
+    "facebook": {
+      "text": "Marre des montres de sport lourdes et des batteries qui tombent à plat en plein entraînement ?\n\nLe PulseFit Active Slim associe un écran tactile AMOLED de 1,47\" incurvé à une autonomie exceptionnelle de 14 jours. Suivez votre rythme cardiaque, votre SpO2 et votre sommeil 24h/24 avec un confort absolu.\n\nFaites passer vos entraînements au niveau supérieur dès 45 $.",
+      "hashtags": [
+        "#PulseFit",
+        "#MontreConnectee",
+        "#SportSante"
+      ]
+    },
+    "linkedin": {
+      "text": "Maintenir une routine sportive exigeante tout en gérant un emploi du temps chargé nécessite des outils fiables.\n\nLe PulseFit Active Slim propose un suivi biométrique continu (cardio, SpO2, sommeil) et 14 jours d'autonomie dans un format ultra-léger et discret.\n\nUne solution adaptée pour optimiser votre énergie et votre santé au quotidien, à partir de 45 $.",
+      "hashtags": [
+        "#PulseFit",
+        "#SanteAuTravail",
+        "#Wellness",
+        "#Performance",
+        "#TechSport"
+      ]
+    }
+  },
+  "language": "fr",
+  "direction": "ltr"
+}

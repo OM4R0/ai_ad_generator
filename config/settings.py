@@ -64,7 +64,12 @@ class Settings:
     # Limits
     llm_timeout_s: float = 60.0
     max_requests_per_min: float = 10.0
-    reference_price_per_mtok: float = 0.0
+    # FR-14, the "what this would cost on a paid plan" estimate, in USD per 1M tokens.
+    # Reference: Gemini 3.5 Flash standard paid rates (public price lists, 2026-11;
+    # check ai.google.dev/gemini-api/docs/pricing). Flash-Lite is cheaper, so for the
+    # vision step this is an upper bound. Free tiers really cost $0 ("actual" cost).
+    reference_input_price_per_mtok: float = 1.50
+    reference_output_price_per_mtok: float = 9.00
 
     @property
     def llm_configured(self) -> bool:
@@ -114,7 +119,10 @@ class Settings:
             max_requests_per_min=_env_float(
                 "MAX_REQUESTS_PER_MIN", defaults.max_requests_per_min
             ),
-            reference_price_per_mtok=_env_float(
-                "REFERENCE_PRICE_PER_MTOK", defaults.reference_price_per_mtok
+            reference_input_price_per_mtok=_env_float(
+                "REFERENCE_INPUT_PRICE_PER_MTOK", defaults.reference_input_price_per_mtok
+            ),
+            reference_output_price_per_mtok=_env_float(
+                "REFERENCE_OUTPUT_PRICE_PER_MTOK", defaults.reference_output_price_per_mtok
             ),
         )

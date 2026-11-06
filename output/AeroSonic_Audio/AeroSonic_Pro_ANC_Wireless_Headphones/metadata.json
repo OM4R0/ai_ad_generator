@@ -1,0 +1,130 @@
+{
+  "product": {
+    "id": 13,
+    "name": "AeroSonic Pro ANC Wireless Headphones",
+    "brand_name": "AeroSonic Audio",
+    "category": "Electronics & Gadgets",
+    "description": "Over-ear hybrid active noise-canceling studio headphones with 45mm custom graphene drivers and LDAC Hi-Res wireless audio.",
+    "features": [
+      "-42dB Hybrid Active Noise Cancellation with transparency mode",
+      "Hi-Res Audio Wireless certification with LDAC codec",
+      "60-hour playtime on single charge (40h with ANC on)",
+      "Memory-foam cooling gel protein leather earpads",
+      "Multipoint Bluetooth 5.4 connection for 2 devices simultaneously"
+    ],
+    "target_audience": "Remote workers, travelers, audiophiles, commuters aged 18–50",
+    "price_range": "$129 – $189",
+    "usp": "Studio-quality silence and immersive sound for less than half the price of Sony XM5",
+    "tone": "Tech-savvy, immersive, confident",
+    "language": "en",
+    "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\13_aerosonic_headphones.jpg"
+  },
+  "brand": {
+    "brand_name": "AeroSonic Audio",
+    "brand_voice": "Tech-savvy, immersive, confident",
+    "brand_colors": [
+      "#1C1C1C",
+      "#2B2B2B",
+      "#FFFFFF"
+    ],
+    "target_market": "Remote workers, travelers, audiophiles, commuters aged 18–50",
+    "language": "en",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "over-ear wireless headphones",
+    "dominant_colors": [
+      "#1C1C1C",
+      "#2B2B2B"
+    ],
+    "materials_finish": [
+      "matte plastic",
+      "textured protein leather",
+      "glossy plastic accents"
+    ],
+    "mood": "modern, sleek, professional, bold",
+    "visual_selling_points": [
+      "Plush cushioning visible on earpads and headband",
+      "Clean over-ear structural design with adjustable arms",
+      "Integrated control buttons and ports clearly accessible"
+    ],
+    "scene_prompt": "A minimalist studio surface with soft dramatic studio lighting, casting subtle shadows, creating an upscale and immersive tech atmosphere with neutral gray tones.",
+    "cutout_quality_hint": "busy background",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "black over-ear wireless headphones"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1830,
+      "completion_tokens": 227,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004788,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1285,
+      "completion_tokens": 1057,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.01144,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.28,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 1.78,
+    "total": 2.07
+  },
+  "created_at": "2026-11-06T22:58:14.658044Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3115,
+    "completion_tokens": 1284,
+    "estimated_cost_usd": 0.016228,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

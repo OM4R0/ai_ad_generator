@@ -8,11 +8,13 @@ lives in `st.session_state`:
 - variants[product_id]    the generations of each product (ADR-004: kept in the session)
 - manual[product_id]      the user's brand edits so far (merged, never lost)
 - pdf_patches[brand_name] what the brand PDF said (per brand, not per product)
+- job                     "generate" | "regenerate" while an ad is being made (buttons locked)
 """
 
 from __future__ import annotations
 
 import hashlib
+import math
 
 import streamlit as st
 
@@ -24,7 +26,11 @@ from core.pipeline import run_product
 from core.schemas import BrandProfile, Language
 from main import DEMO_PRODUCT_IDS
 
-PHOTO_SOURCES = ("Catalog photo", "Upload a photo", "Image URL")
+CATALOG, AI_PHOTO, UPLOAD, LINK = ("Catalog photo", "AI-generated photo", "Upload a photo",
+                                   "Image URL")
+PHOTO_SOURCES = (CATALOG, AI_PHOTO, UPLOAD, LINK)
+PHOTO_LABELS = {"local": "catalog photo", "catalog_url": "catalog photo (downloaded)",
+                "upload": "your upload", "url": "from your link", "ai": "AI-generated"}
 PLATFORMS = ("instagram", "tiktok", "facebook", "linkedin")
 MAX_COLOUR_PICKERS = 4
 
@@ -52,6 +58,12 @@ def _form_key(product_id: int, brand: BrandProfile) -> str:
 def _flash(kind: str, message: str) -> None:
     """A message that survives st.rerun() (shown at the top of the next run)."""
     state.flash.append((kind, message))
+
+
+def _start(job: str) -> None:
+    """Button callback. Streamlit runs it BEFORE redrawing the page, so in that run
+    the buttons are already drawn disabled: a second click can't start a second ad."""
+    state.job = job
 
 
 def _copy_block(variant, direction: str) -> None:
@@ -89,12 +101,15 @@ with st.sidebar:
     source = st.radio("Photo source", PHOTO_SOURCES, key="image_source",
                       label_visibility="collapsed")
     upload = image_url = None
-    if source == PHOTO_SOURCES[1]:
+    if source == AI_PHOTO:
+        st.caption("The image model paints the product from its catalog description "
+                   "(free, no key). Check it matches the real product before publishing.")
+    elif source == UPLOAD:
         file = st.file_uploader("Photo", type=["png", "jpg", "jpeg", "webp"], key="upload")
         upload = file.getvalue() if file is not None else None
         if file is None:
             st.caption("No file yet: the catalog photo is used.")
-    elif source == PHOTO_SOURCES[2]:
+    elif source == LINK:
         image_url = st.text_input("Image URL", key="image_url").strip() or None
 
     history = state.variants.get(product_id, [])
@@ -133,27 +148,47 @@ with st.sidebar:
                                 format_func=lambda lang: lang.display_name,
                                 key=f"language_{form_key}")
 
+    busy = state.get("job") is not None   # an ad is being made right now
     left, right = st.columns(2)
-    generate = left.button("Generate", type="primary", key="generate")
-    regenerate = right.button("New angle", key="regenerate", disabled=not history,
-                              help="Ask for a different hook and headline (Regenerate)")
+    left.button("Generate", type="primary", key="generate", disabled=busy,
+                on_click=_start, args=("generate",))
+    right.button("New angle", key="regenerate", disabled=busy or not history,
+                 on_click=_start, args=("regenerate",),
+                 help="Ask for a different hook and headline (Regenerate)")
 
 # --------------------------------------------------------------------------- #
-# Generating
+# Generating (one job per click; the AI limit protects the free daily quota)
 # --------------------------------------------------------------------------- #
 
-if generate or regenerate:
-    edit = dashboard.brand_patch_from_form(base, voice=voice, colors=colours,
-                                           market=market, language=language)
-    manual = state.manual[product_id] = dashboard.merge_patches(manual, edit)
-    variation = dashboard.next_variation(history) if regenerate else 0
-    with st.spinner("Making the ad… (a product's first run can take a minute)"):
-        run = run_product(product, services, write=False, upload=upload, image_url=image_url,
-                          pdf_patch=pdf_patch, manual_patch=manual, variation=variation)
-    if run.ok:
-        state.variants[product_id] = dashboard.add_variant(history, run, variation)
-        st.rerun()  # redraw the brand form from the new result
-    st.error(f"Could not make this ad: {run.error}")
+job = state.get("job")
+if job:
+    try:
+        limiter = dashboard.ai_limiter()
+        wait = limiter.wait_s() if use_ai else 0.0
+        if wait:
+            _flash("warning", f"AI limit reached: {dashboard.AI_LIMIT} new AI ads per "
+                              f"{dashboard.AI_WINDOW_S // 60} minutes, to protect the free "
+                              f"daily quota. Try again in about {math.ceil(wait / 60)} min, "
+                              "or switch **Use AI** off (saved answers still work).")
+        else:
+            edit = dashboard.brand_patch_from_form(base, voice=voice, colors=colours,
+                                                   market=market, language=language)
+            manual = state.manual[product_id] = dashboard.merge_patches(manual, edit)
+            variation = dashboard.next_variation(history) if job == "regenerate" else 0
+            with st.spinner("Making the ad… (a product's first run can take a minute)"):
+                run = run_product(product, services, write=False, upload=upload,
+                                  image_url=image_url, ai_photo=source == AI_PHOTO,
+                                  pdf_patch=pdf_patch, manual_patch=manual,
+                                  variation=variation)
+                if run.ok:  # stored at once, so it is kept even if the page is interrupted
+                    state.variants[product_id] = dashboard.add_variant(history, run, variation)
+                    if use_ai and dashboard.used_live_ai(run.result):
+                        limiter.record()          # cached answers are free: not counted
+            if not run.ok:
+                _flash("error", f"Could not make this ad: {run.error}")
+    finally:
+        state.job = None   # whatever happened, the buttons are never left locked
+    st.rerun()  # redraw: buttons unlocked, brand form from the new result, messages shown
 
 # --------------------------------------------------------------------------- #
 # Main area: the chosen variant
@@ -185,11 +220,16 @@ for warning in result.warnings:
 for fallback in result.fallbacks:
     st.info(f"Fallback: {fallback}")
 
-feed_tab, story_tab, carousel_tab, captions_tab, cost_tab = st.tabs(
-    ["Feed A/B", "Story", "Carousel", "Captions", "Cost & details"])
+feed_tab, story_tab, carousel_tab, mockup_tab, captions_tab, cost_tab = st.tabs(
+    ["Feed A/B", "Story", "Carousel", "Instagram preview", "Captions", "Cost & details"])
 
 with feed_tab:
-    for column, image, variant, name in zip(st.columns(2), creatives.feed_variants,
+    # The photo the ads were made from, side by side with the two A/B creatives.
+    photo_column, *ad_columns = st.columns([0.8, 1, 1])
+    if creatives.photo is not None:
+        photo_column.image(creatives.photo, width="stretch",
+                           caption=f"Product photo · {PHOTO_LABELS.get(result.image_source, result.image_source)}")
+    for column, image, variant, name in zip(ad_columns, creatives.feed_variants,
                                             copy.variants, ("A · pain point", "B · emotional")):
         with column:
             st.image(image, caption=name, width="stretch")
@@ -205,6 +245,18 @@ with carousel_tab:
     total = len(creatives.carousel)
     for i, (column, image) in enumerate(zip(st.columns(total), creatives.carousel), start=1):
         column.image(image, caption=f"{i}/{total}", width="stretch")
+
+with mockup_tab:
+    left, right = st.columns([1, 1])
+    if creatives.mockup is not None:
+        left.image(creatives.mockup, width=420,
+                   caption="Feed ad A in an Instagram post (preview, light mode)")
+    right.markdown(
+        "How the ad looks in the Instagram feed, before it is published.\n\n"
+        "- The caption is cut after **two lines** with *… more*, like Instagram does: "
+        "the hook has to come first.\n"
+        "- Arabic ads are shown mirrored, the way an Arabic phone shows them.\n"
+        "- Saved as `mockup_instagram.png` with the other files.")
 
 with captions_tab:
     for platform in PLATFORMS:

@@ -20,8 +20,8 @@ python-bidi>=0.4.2
 pypdf>=4.2
 PyYAML>=6.0
 
-# Dashboard
-streamlit>=1.36
+# Dashboard (tested on 1.67; older versions lack st.image(width="stretch"))
+streamlit>=1.67
 
 # Tests
 pytest>=8.0

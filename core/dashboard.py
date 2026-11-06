@@ -7,8 +7,11 @@ tested without a browser. `app.py` only draws widgets and calls these.
 from __future__ import annotations
 
 import html
+import threading
+import time
+from collections import deque
 from dataclasses import dataclass, fields
-from typing import Iterable
+from typing import Callable, Iterable
 
 from config.settings import Settings
 from core.brand_manager import PdfExtractor
@@ -20,6 +23,8 @@ from core.visual_engine import Remover
 BRAND_PDF_PROMPT = "brand_pdf_v1"
 BRAND_PDF_TEMPERATURE = 0.1   # extraction, not creativity
 MAX_VARIANTS = 5              # how many Regenerate results stay in the session
+AI_LIMIT = 5                  # new AI ads (Generate / New angle) …
+AI_WINDOW_S = 600             # … per 10 minutes, for the whole server: one API key
 
 
 @dataclass
@@ -136,6 +141,58 @@ def cost_rows(result: CampaignResult) -> list[dict]:
         }
         for u in result.usage
     ]
+
+
+# --------------------------------------------------------------------------- #
+# Rate limit (NFR-7): protects the free daily quota from a burst of clicks
+# --------------------------------------------------------------------------- #
+
+
+class RateLimiter:
+    """At most `limit` events in any `window_s` seconds (a sliding window).
+
+    The dashboard records one event per ad that made a LIVE AI request; answers
+    replayed from the cache are free and don't count. Every browser tab of this
+    server shares one limiter, because they all spend the same API key.
+    """
+
+    def __init__(self, limit: int = AI_LIMIT, window_s: float = AI_WINDOW_S, *,
+                 clock: Callable[[], float] = time.monotonic) -> None:
+        self.limit, self.window_s = limit, window_s
+        self._clock = clock
+        self._times: deque[float] = deque()
+        self._lock = threading.Lock()     # Streamlit runs each tab in its own thread
+
+    def wait_s(self) -> float:
+        """0 if one more event is allowed now, else the seconds until it is."""
+        with self._lock:
+            now = self._forget_old()
+            if len(self._times) < self.limit:
+                return 0.0
+            return self._times[0] + self.window_s - now
+
+    def record(self) -> None:
+        with self._lock:
+            self._times.append(self._forget_old())
+
+    def _forget_old(self) -> float:
+        now = self._clock()
+        while self._times and now - self._times[0] >= self.window_s:
+            self._times.popleft()
+        return now
+
+
+_AI_LIMITER = RateLimiter()
+
+
+def ai_limiter() -> RateLimiter:
+    """The server-wide limiter (a function, so the dashboard tests can swap it)."""
+    return _AI_LIMITER
+
+
+def used_live_ai(result: CampaignResult) -> bool:
+    """True if making this ad sent at least one request to an AI provider."""
+    return any(not u.cached for u in result.usage)
 
 
 # --------------------------------------------------------------------------- #

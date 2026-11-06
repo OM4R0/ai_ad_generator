@@ -1,0 +1,130 @@
+{
+  "product": {
+    "id": 22,
+    "name": "SlimArmor Minimalist RFID-Blocking Leather Wallet",
+    "brand_name": "Forge & Hide",
+    "category": "Bags & Leather Goods",
+    "description": "Ultra-slim bi-fold wallet handcrafted from full-grain vegetable-tanned leather with a patented quick-card ejector and RFID security mesh.",
+    "features": [
+      "Military-grade RFID blocking liner protects against wireless theft",
+      "Full-grain Italian vegetable-tanned leather that develops rich patina",
+      "Quick-access trigger mechanism fans out cards in 0.1 second",
+      "Holds up to 10 cards + folded cash in an 8mm slim profile",
+      "Integrated hidden slot for Apple AirTag tracking"
+    ],
+    "target_audience": "Modern men, everyday carry (EDC) enthusiasts aged 20–50",
+    "price_range": "$38 – $58",
+    "usp": "Eliminate pocket bulge forever while locking your credit cards against digital theft",
+    "tone": "Practical, sleek, masculine",
+    "language": "en",
+    "image_url": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\22_leather_wallet.jpg"
+  },
+  "brand": {
+    "brand_name": "Forge & Hide",
+    "brand_voice": "Practical, sleek, masculine",
+    "brand_colors": [
+      "#6B4423",
+      "#8B5A2B",
+      "#FFFFFF"
+    ],
+    "target_market": "Modern men, everyday carry (EDC) enthusiasts aged 20–50",
+    "language": "en",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "leather wallet",
+    "dominant_colors": [
+      "#6B4423",
+      "#8B5A2B",
+      "#4A2F13"
+    ],
+    "materials_finish": [
+      "distressed leather",
+      "matte leather grain"
+    ],
+    "mood": "rugged, sophisticated, minimalist, masculine",
+    "visual_selling_points": [
+      "rich distressed leather texture",
+      "compact bi-fold profile",
+      "visible card slot interior"
+    ],
+    "scene_prompt": "Minimalist concrete surface with dramatic directional lighting and moody dark grey tones, creating a sleek and modern masculine aesthetic.",
+    "cutout_quality_hint": "busy background",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "a brown leather wallet floating against a dark blurred background"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1807,
+      "completion_tokens": 214,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004636,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1263,
+      "completion_tokens": 1086,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.011669,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.28,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 1.72,
+    "total": 2.02
+  },
+  "created_at": "2026-11-06T22:58:20.328883Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3070,
+    "completion_tokens": 1300,
+    "estimated_cost_usd": 0.016305,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

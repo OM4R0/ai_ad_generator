@@ -1,0 +1,93 @@
+{
+  "variants": [
+    {
+      "angle": "pain_point",
+      "headline": "Ditch the 2-Inch Pocket Bulge for an 8mm Leather Wallet",
+      "hook": "Bulky leather wallets ruin the fit of your jeans. The 8mm SlimArmor fixes that.",
+      "primary_text": "Most wallets turn into thick, disorganized bricks within a month. Forge & Hide built an 8mm bi-fold crafted from Italian vegetable-tanned leather that holds 10 cards without the bulk. Eject your primary cards instantly with the 0.1-second trigger mechanism.",
+      "bullets": [
+        "8mm ultra-slim profile holds up to 10 cards",
+        "0.1-second quick-access card trigger mechanism",
+        "Military-grade RFID blocking liner stops digital theft"
+      ],
+      "cta": "Shop SlimArmor From $38"
+    },
+    {
+      "angle": "emotional",
+      "headline": "Full-Grain Italian Leather Built to Age Better Than Your Old Wallet",
+      "hook": "Carry less, move faster. Crafted from full-grain Italian leather that gets better with age.",
+      "primary_text": "Your everyday carry should feel solid, understated, and secure. The SlimArmor combines old-world vegetable-tanned leather with modern security. It fits an AirTag invisibly and protects your credit cards behind a military-grade RFID liner.",
+      "bullets": [
+        "Full-grain Italian leather develops a rich custom patina",
+        "Integrated hidden pocket for Apple AirTag tracking",
+        "Built-in RFID liner locks down your cards"
+      ],
+      "cta": "Get Yours From $38"
+    }
+  ],
+  "carousel": [
+    {
+      "title": "Stop Carrying a Brick in Your Back Pocket",
+      "body": "Upgrade to an 8mm ultra-slim profile made from full-grain Italian leather."
+    },
+    {
+      "title": "0.1-Second Card Access",
+      "body": "Press the quick-release trigger to fan out your 10 most used cards instantly."
+    },
+    {
+      "title": "Military-Grade Security & AirTag Slot",
+      "body": "Block RFID scanner theft and track your wallet anywhere with a hidden AirTag pocket."
+    },
+    {
+      "title": "Get the SlimArmor Wallet",
+      "body": "Available now starting from $38."
+    }
+  ],
+  "captions": {
+    "instagram": {
+      "text": "Bulky wallets belong in the past. 💳\n\nThe SlimArmor wallet drops your everyday carry down to an 8mm profile without sacrificing storage. Built from full-grain Italian vegetable-tanned leather, it holds 10 cards, cash, and a hidden Apple AirTag.\n\nHit the trigger for 0.1-second card access while military-grade RFID shielding keeps your data safe.",
+      "hashtags": [
+        "#EverydayCarry",
+        "#EDCgear",
+        "#MinimalistWallet",
+        "#LeatherGoods",
+        "#MensStyle",
+        "#ForgeAndHide",
+        "#EDCcommunity",
+        "#SlimWallet",
+        "#RFIDwallet",
+        "#MensAccessories"
+      ]
+    },
+    "tiktok": {
+      "text": "8mm thin, holds 10 cards, ejects them in 0.1 seconds ⚡ Plus built-in RFID protection.",
+      "hashtags": [
+        "#edc",
+        "#everydaycarry",
+        "#wallet",
+        "#mensstyle",
+        "#leather"
+      ]
+    },
+    "facebook": {
+      "text": "Tired of carrying a bulky brick in your pocket? The SlimArmor wallet condenses 10 cards and cash into an ultra-slim 8mm profile.\n\nHandcrafted from full-grain Italian vegetable-tanned leather, it features a 0.1-second card ejector, an integrated AirTag slot, and military-grade RFID protection. Prices start at $38.",
+      "hashtags": [
+        "#EverydayCarry",
+        "#MensGear",
+        "#LeatherWallet"
+      ]
+    },
+    "linkedin": {
+      "text": "Streamline your daily routine with minimalist design.\n\nThe SlimArmor wallet by Forge & Hide packs an 8mm profile with full-grain Italian leather, military-grade RFID protection, and quick-card ejection technology. It holds up to 10 cards alongside an integrated slot for Apple AirTag tracking.\n\nDesigned for modern professionals who demand function and style.",
+      "hashtags": [
+        "#ProductDesign",
+        "#Minimalism",
+        "#EverydayCarry",
+        "#LeatherGoods",
+        "#Innovation"
+      ]
+    }
+  },
+  "language": "en",
+  "direction": "ltr"
+}

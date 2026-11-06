@@ -15,7 +15,9 @@ from core.cache import CachedLLM
 from core.excel_loader import load_catalog
 from core.llm_client import LLMError
 from core.pipeline import OfflineLLM, Services, open_services, run_batch, run_product
-from core.scene_generator import SceneGenerator
+from core.scene_generator import (
+    PRODUCT_PHOTO_RAILS, PRODUCT_PHOTO_SIZE, SCENE_GUARD_RAILS, SceneGenerator, SceneResult,
+)
 from core.schemas import BrandPatch, CallUsage, VisionAnalysis
 from tests.test_copy_engine import _draft
 from tests.test_visual_engine import fake_remover
@@ -56,8 +58,18 @@ class RecordingScenes(SceneGenerator):
         super().__init__("none", cache_dir=cache_dir)
         self.prompts: list[str] = []
 
-    def generate(self, prompt, size, palette, seed=0):
+    def generate(self, prompt, size, palette, seed=0, **kwargs):
         self.prompts.append(prompt)
+        return super().generate(prompt, size, palette, seed, **kwargs)
+
+
+class PhotoScenes(RecordingScenes):
+    """Paints a blue 'product photo' when one is asked for; scenes stay gradients."""
+
+    def generate(self, prompt, size, palette, seed=0, *, rails=SCENE_GUARD_RAILS):
+        if rails == PRODUCT_PHOTO_RAILS:
+            self.prompts.append(prompt)
+            return SceneResult(Image.new("RGB", size, "blue"), "pollinations")
         return super().generate(prompt, size, palette, seed)
 
 
@@ -143,6 +155,72 @@ def test_p7_an_uploaded_photo_replaces_the_catalog_photo(tmp_path):
     assert services.llm.calls[0]["image"].size == (600, 400)
 
 
+def test_p7_an_image_link_that_does_not_work_is_reported_not_silent(tmp_path):
+    # Dashboard "Image URL": a broken link fell back to the catalog photo and the
+    # only sign was "Photo: local" in small print.
+    run = run_product(HEADPHONES, _services(tmp_path), image_url="ftp://example.com/photo.jpg")
+    assert run.ok and run.result.image_source == "local"
+    [note] = [f for f in run.result.fallbacks if f.startswith("photo:")]
+    assert "ftp://example.com/photo.jpg" in note and "catalog" in note
+
+
+def test_p7_the_ai_can_paint_the_product_photo(tmp_path):
+    # Brief, dashboard: "use the default reference image, let AI generate a new one, or
+    # upload a custom image". The vision step then looks at the AI photo.
+    services = _services(tmp_path)
+    services.scenes = PhotoScenes(tmp_path)
+    run = run_product(HEADPHONES, services, ai_photo=True)
+    assert run.ok and run.result.image_source == "ai"
+    assert services.llm.calls[0]["image"].size == PRODUCT_PHOTO_SIZE
+    assert HEADPHONES.name in services.scenes.prompts[0]
+    assert any("AI-generated" in w for w in run.result.warnings)   # a human must check it
+
+
+def test_p7_the_ai_photo_stays_the_same_for_every_new_angle(tmp_path):
+    services = _services(tmp_path)
+    services.scenes = PhotoScenes(tmp_path)
+    seeds = []
+    real = services.scenes.generate
+    services.scenes.generate = lambda *a, **k: seeds.append((a[3] if len(a) > 3 else k.get("seed", 0), k.get("rails"))) or real(*a, **k)
+    run_product(HEADPHONES, services, ai_photo=True, variation=2)
+    assert (0, PRODUCT_PHOTO_RAILS) in seeds            # the product photo: always seed 0
+
+
+def test_p7_without_the_image_service_the_ai_photo_falls_back_to_the_catalog_photo(tmp_path):
+    run = run_product(HEADPHONES, _services(tmp_path), ai_photo=True)   # provider "none"
+    assert run.ok and run.result.image_source == "local"
+    assert any(f.startswith("photo:") and "AI photo" in f for f in run.result.fallbacks)
+
+
+def _brand_with_logo(tmp_path, logo_url: str):
+    """A brand config for AeroSonic Audio (#13) with a logo_url, in its own folder."""
+    brands = tmp_path / "brands"
+    brands.mkdir()
+    (brands / "aerosonic.json").write_text(json.dumps(
+        {"brand_name": "AeroSonic Audio", "logo_url": logo_url}), encoding="utf-8")
+    services = _services(tmp_path)
+    services.settings = replace(services.settings, brands_dir=brands)
+    return services
+
+
+def test_p8_the_logo_in_the_brand_config_is_drawn_on_the_ads(tmp_path):
+    logo = tmp_path / "logo.png"
+    Image.new("RGBA", (300, 80), (20, 60, 230, 255)).save(logo)
+    run = run_product(HEADPHONES, _brand_with_logo(tmp_path, str(logo)), write=False)
+    box = run.creatives.layouts["feed_a"].text_boxes[0]
+    pixel = run.creatives.feed_variants[0].getpixel((box[0] + 5, box[1] + 5))
+    assert all(abs(a - b) <= 40 for a, b in zip(pixel, (20, 60, 230)))
+    assert not any(f.startswith("logo:") for f in run.result.fallbacks)
+
+
+def test_p8_a_logo_that_cannot_be_loaded_falls_back_to_the_wordmark_and_says_so(tmp_path):
+    run = run_product(HEADPHONES, _brand_with_logo(tmp_path, "assets/missing-logo.png"),
+                      write=False)
+    assert run.ok
+    [note] = [f for f in run.result.fallbacks if f.startswith("logo:")]
+    assert "missing-logo.png" in note and "wordmark" in note
+
+
 def test_p8_manual_brand_edits_win(tmp_path):
     run = run_product(HEADPHONES, _services(tmp_path),
                       manual_patch=BrandPatch(brand_colors=["#FF0000"]))
@@ -203,6 +281,20 @@ def test_p15_a_rerun_spends_no_requests(tmp_path):
     again = run_product(HEADPHONES, services)
     assert len(fake.calls) == 2                       # not 4
     assert all(u.cached for u in again.result.usage)
+
+
+def test_p15_replayed_answers_are_priced_at_todays_reference_price(tmp_path):
+    # Live run 2026-11-07: answers cached while no price was set said "$0" forever,
+    # because the estimate was frozen into the cache entry at call time.
+    fake = ScriptedLLM()                      # every answer: 100 prompt + 50 completion tokens
+    services = _services(tmp_path, CachedLLM(fake, tmp_path / "cache"))
+    run_product(HEADPHONES, services)
+    services.settings = replace(services.settings, reference_input_price_per_mtok=2.0,
+                                reference_output_price_per_mtok=10.0)
+    again = run_product(HEADPHONES, services)
+    assert all(u.cached for u in again.result.usage)
+    expected = (100 * 2.0 + 50 * 10.0) / 1_000_000
+    assert [u.estimated_cost_usd for u in again.result.usage] == [pytest.approx(expected)] * 2
 
 
 def test_p16_regenerate_asks_only_for_new_copy(tmp_path):

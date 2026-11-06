@@ -118,6 +118,8 @@ def test_photo_warnings_report_a_wrong_product_and_a_foreign_brand():
     warnings = photo_warnings(analysis, kettle)
     assert any("iced coffee" in w for w in warnings)
     assert any("Starbucks" in w for w in warnings)
+    # Live run: "not publishable as a Aurelia Milano ad" (a/an before a vowel)
+    assert not any(" as a " in w for w in warnings)
 
 
 def test_photo_warnings_are_empty_for_a_matching_unbranded_photo():

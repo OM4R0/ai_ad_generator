@@ -6,6 +6,7 @@
     ├── creative_feed_b.png       1080×1080, variant B (emotional): the A/B bonus
     ├── creative_story.png        1080×1920
     ├── carousel_slide_1..N.png   1080×1080, N = 3-5
+    ├── mockup_instagram.png      feed A inside an Instagram post (FR-15 bonus)
     └── metadata.json             how the ad was made (spec §5.2); written LAST
 
 Reruns overwrite cleanly (ADR-004): the writer first deletes the files it
@@ -75,6 +76,8 @@ def campaign_files(result: CampaignResult, creatives: CreativeSet) -> dict[str, 
               "creative_story.png": creatives.story}
     for i, slide in enumerate(creatives.carousel, start=1):
         images[f"carousel_slide_{i}.png"] = slide
+    if creatives.mockup is not None:
+        images["mockup_instagram.png"] = creatives.mockup
 
     files: dict[str, bytes] = {}
     for name, image in images.items():

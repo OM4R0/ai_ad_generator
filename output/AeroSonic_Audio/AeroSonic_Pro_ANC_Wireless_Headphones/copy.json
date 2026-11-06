@@ -1,0 +1,91 @@
+{
+  "variants": [
+    {
+      "angle": "pain_point",
+      "headline": "-42dB ANC Headphones from $129",
+      "hook": "Tired of loud plane engines and constant charging? Block out -42dB of chatter for 60 straight hours.",
+      "primary_text": "Loud offices and noisy flights destroy your focus. The AeroSonic Pro cuts -42dB of background noise using custom 45mm graphene drivers. Switch automatically between your laptop and phone with Bluetooth 5.4.",
+      "bullets": [
+        "-42dB hybrid noise cancellation",
+        "60-hour total battery life",
+        "Cooling-gel memory foam earpads"
+      ],
+      "cta": "Shop AeroSonic Pro"
+    },
+    {
+      "angle": "emotional",
+      "headline": "60 Hours of Studio Sound from $129",
+      "hook": "Pure silence meets studio audio. Reclaim your focus anywhere with LDAC Hi-Res wireless sound.",
+      "primary_text": "Step into complete clarity without paying top-tier prices. Featuring 45mm custom graphene drivers and plush protein leather earpads, AeroSonic Pro surrounds you in rich Hi-Res audio all day long.",
+      "bullets": [
+        "Hi-Res LDAC studio sound quality",
+        "Dual-device multipoint connection",
+        "Plush cooling-gel protein leather pads"
+      ],
+      "cta": "Get Yours Now"
+    }
+  ],
+  "carousel": [
+    {
+      "title": "Block Out -42dB of Noise",
+      "body": "Hybrid active noise cancellation cuts background distraction on flights or in open offices instantly."
+    },
+    {
+      "title": "60-Hour Non-Stop Playtime",
+      "body": "Get up to 60 hours of audio on a single charge, or 40 hours with active noise cancellation enabled."
+    },
+    {
+      "title": "Cooling-Gel Comfort",
+      "body": "Plush memory foam and protein leather keep your ears cool and comfortable during long work sessions."
+    },
+    {
+      "title": "Shop AeroSonic Pro from $129",
+      "body": "Enjoy studio sound and multipoint Bluetooth 5.4 connectivity today."
+    }
+  ],
+  "captions": {
+    "instagram": {
+      "text": "Background noise ruins your deep work. Flight hums, office chatter, traffic—it all adds up.\n\nThe AeroSonic Pro delivers -42dB hybrid active noise cancellation paired with custom 45mm graphene drivers. Get studio-grade LDAC audio and 60 hours of playtime on a single charge. 🔋\n\nUpgrade your focus for less than half the price of standard flagship headphones. Starting from $129.",
+      "hashtags": [
+        "#WirelessHeadphones",
+        "#NoiseCanceling",
+        "#Audiophile",
+        "#RemoteWork",
+        "#TravelTech",
+        "#HiResAudio",
+        "#OverEarHeadphones",
+        "#TechGadgets"
+      ]
+    },
+    "tiktok": {
+      "text": "60 hours of battery and -42dB noise cancellation for less than half the price of XM5s. The AeroSonic Pro hits different. 🎧⚡",
+      "hashtags": [
+        "#techtok",
+        "#headphones",
+        "#noisecanceling",
+        "#audiophile",
+        "#workfromhome"
+      ]
+    },
+    "facebook": {
+      "text": "Overpaying for noise-canceling headphones stops now.\n\nThe AeroSonic Pro gives you -42dB hybrid ANC, 45mm graphene drivers, and a 60-hour battery life starting from $129. Connect to both your laptop and phone at the same time with Bluetooth 5.4.\n\nGet studio silence wherever you work or travel.",
+      "hashtags": [
+        "#Headphones",
+        "#TechGear",
+        "#RemoteWork"
+      ]
+    },
+    "linkedin": {
+      "text": "Cut workplace distractions with -42dB hybrid active noise cancellation.\n\nThe AeroSonic Pro features 60 hours of continuous battery life, multipoint Bluetooth 5.4 for dual-device switching, and cooling-gel memory foam earpads for all-day focus.\n\nHigh-resolution studio audio engineered for professionals, starting from $129.",
+      "hashtags": [
+        "#RemoteWork",
+        "#Productivity",
+        "#TechNews",
+        "#AudioGear",
+        "#WorkSpace"
+      ]
+    }
+  },
+  "language": "en",
+  "direction": "ltr"
+}

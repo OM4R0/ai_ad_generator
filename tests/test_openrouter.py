@@ -33,7 +33,8 @@ def _settings(**overrides) -> Settings:
         vision_model="gemini-a", copy_model="gemini-a",
         fallback_base_url="https://openrouter.test/api/v1", fallback_api_key=OPENROUTER_KEY,
         fallback_models=["or-a:free", "or-b:free"],
-        max_requests_per_min=0, reference_price_per_mtok=1.0,
+        max_requests_per_min=0,
+        reference_input_price_per_mtok=1.0, reference_output_price_per_mtok=1.0,
     )
     return replace(base, **overrides)
 

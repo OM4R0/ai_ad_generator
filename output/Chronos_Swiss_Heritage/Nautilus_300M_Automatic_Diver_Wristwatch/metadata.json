@@ -1,0 +1,137 @@
+{
+  "product": {
+    "id": 19,
+    "name": "Nautilus 300M Automatic Diver Wristwatch",
+    "brand_name": "Chronos Swiss Heritage",
+    "category": "Watches & Eyewear",
+    "description": "Professional automatic mechanical diver watch crafted from surgical 316L stainless steel with ceramic bezel and sapphire crystal.",
+    "features": [
+      "Japanese NH35 automatic self-winding mechanical movement",
+      "300-meter (30 ATM) certified water resistance with screw-down crown",
+      "Scratch-proof sapphire crystal with anti-reflective coating",
+      "120-click unidirectional scratch-resistant ceramic bezel",
+      "Super-LumiNova BGW9 Swiss luminous hands and dial markers"
+    ],
+    "target_audience": "Watch collectors, divers, stylish men aged 25–65",
+    "price_range": "$260 – $390",
+    "usp": "Genuine mechanical luxury dive watch engineering without the $5,000 Swiss tag",
+    "tone": "Timeless, masculine, prestigious",
+    "language": "en",
+    "image_url": "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\19_diver_watch.jpg"
+  },
+  "brand": {
+    "brand_name": "Chronos Swiss Heritage",
+    "brand_voice": "Timeless, masculine, prestigious",
+    "brand_colors": [
+      "#C8B9A6",
+      "#5C3A21",
+      "#111111"
+    ],
+    "target_market": "Watch collectors, divers, stylish men aged 25–65",
+    "language": "en",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "luxury chronograph wristwatch",
+    "dominant_colors": [
+      "#C8B9A6",
+      "#5C3A21",
+      "#C0C0C0"
+    ],
+    "materials_finish": [
+      "polished stainless steel",
+      "glossy leather strap",
+      "clear crystal glass"
+    ],
+    "mood": "luxurious, sophisticated, prestigious, timeless",
+    "visual_selling_points": [
+      "intricate dial typography and sub-dials",
+      "polished metallic case with multiple pushers",
+      "rich textured leather strap"
+    ],
+    "scene_prompt": "A minimalist dark slate surface with dramatic side lighting, creating deep shadows and subtle reflections, emphasizing a luxurious and prestigious atmosphere.",
+    "cutout_quality_hint": "clean",
+    "visible_brands": [
+      "IWC SCHAFFHAUSEN"
+    ],
+    "photo_matches_product": true,
+    "photo_shows": "a luxury wristwatch with a leather strap on a reflective surface"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "carousel_slide_5.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1806,
+      "completion_tokens": 247,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004932,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1276,
+      "completion_tokens": 1192,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.012642,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [
+    "the photo shows another brand (IWC SCHAFFHAUSEN); not publishable as an ad for Chronos Swiss Heritage",
+    "price $5,000 in pain_point headline is not in the catalog range $260 – $390"
+  ],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.3,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 1.83,
+    "total": 2.14
+  },
+  "created_at": "2026-11-06T22:58:17.319368Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3082,
+    "completion_tokens": 1439,
+    "estimated_cost_usd": 0.017574,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

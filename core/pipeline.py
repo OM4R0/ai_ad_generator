@@ -21,14 +21,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Iterator, Protocol
 
+from PIL import Image
+
 from config.settings import Settings
 from core.brand_manager import resolve_brand
 from core.cache import CachedLLM
 from core.copy_engine import generate_copy
-from core.image_source import load_product_image
-from core.llm_client import LLMClient, LLMError
+from core.image_source import ImageSourceError, load_logo, load_product_image
+from core.llm_client import LLMClient, LLMError, reference_cost_usd
 from core.output_writer import write_campaign
-from core.scene_generator import SceneGenerator
+from core.scene_generator import PRODUCT_PHOTO_RAILS, PRODUCT_PHOTO_SIZE, SceneGenerator
 from core.schemas import BrandPatch, CampaignResult, Product
 from core.vision_agent import analyze_product, photo_warnings
 from core.visual_engine import CreativeSet, Remover, build_creatives
@@ -84,11 +86,15 @@ def generate_campaign(
     *,
     upload: bytes | None = None,
     image_url: str | None = None,
+    ai_photo: bool = False,
     pdf_patch: BrandPatch | None = None,
     manual_patch: BrandPatch | None = None,
     variation: int = 0,
 ) -> tuple[CampaignResult, CreativeSet]:
     """Make one product's campaign in memory (nothing is written).
+
+    ai_photo: let the image model paint the product photo (the brief's "let AI
+    generate a new one"); without the image service, the catalog photo is used.
 
     Raises:
         ImageSourceError: no usable photo (the only failure with no fallback).
@@ -103,7 +109,8 @@ def generate_campaign(
         timings[step] = round(now - clock, 2)
         clock = now
 
-    photo, image_source = load_product_image(product, upload=upload, url=image_url)
+    photo, image_source, photo_note = (_ai_photo(product, services) if ai_photo else
+                                       _real_photo(product, upload, image_url))
     lap("image")
 
     vision = analyze_product(product, photo, services.llm, settings.vision_model)
@@ -118,9 +125,10 @@ def generate_campaign(
                          variation=variation)
     lap("copy")
 
+    logo, logo_note = _brand_logo(brand.logo_url, settings)
     creatives = build_creatives(product, brand, copy.copy, photo, services.scenes,
                                 scene_prompt=vision.analysis.scene_prompt,
-                                remover=services.remover, seed=variation)
+                                remover=services.remover, seed=variation, logo=logo)
     lap("visuals")
     timings["total"] = round(time.monotonic() - started, 2)
 
@@ -129,9 +137,14 @@ def generate_campaign(
         brand=brand,
         vision=vision.analysis,
         copy=copy.copy,
-        usage=[u for u in (vision.usage, copy.usage) if u is not None],
-        fallbacks=[f for f in (vision.fallback, copy.fallback) if f] + creatives.notes,
-        warnings=[*brand.warnings, *photo_warnings(vision.analysis, product), *copy.warnings],
+        # Priced here, at today's reference price: a cached answer carries the
+        # estimate of the day it was made (FR-14).
+        usage=[u.model_copy(update={"estimated_cost_usd": reference_cost_usd(u, settings)})
+               for u in (vision.usage, copy.usage) if u is not None],
+        fallbacks=[f for f in (photo_note, vision.fallback, copy.fallback, logo_note) if f]
+        + creatives.notes,
+        warnings=[*brand.warnings, *photo_warnings(vision.analysis, product), *copy.warnings,
+                  *([AI_PHOTO_WARNING] if image_source == "ai" else [])],
         prompt_versions={"vision": vision.prompt_version, "copy": copy.prompt_version},
         image_source=image_source,
         product_mode=creatives.product_mode,
@@ -139,6 +152,48 @@ def generate_campaign(
         timings_s=timings,
     )
     return result, creatives
+
+
+AI_PHOTO_WARNING = ("the product photo is AI-generated: check that it shows the real product "
+                    "(shape, colour, details) before publishing")
+
+
+def _real_photo(product: Product, upload: bytes | None,
+                image_url: str | None) -> tuple[Image.Image, str, str | None]:
+    """The user's upload or link, else the catalog photo; a link that failed is noted."""
+    skipped: list[str] = []
+    photo, source = load_product_image(product, upload=upload, url=image_url, skipped=skipped)
+    note = None
+    if image_url and source != "url":
+        reason = skipped[0][:160] if skipped else image_url
+        note = f"photo: your image link didn't work ({reason}); used the catalog photo"
+    return photo, source, note
+
+
+def _brand_logo(logo_url: str | None,
+                settings: Settings) -> tuple[Image.Image | None, str | None]:
+    """The brand config's logo, or (None, why) so the ads use the text wordmark."""
+    if not logo_url:
+        return None, None
+    try:
+        return load_logo(logo_url, base_dir=settings.project_root), None
+    except ImageSourceError as exc:
+        return None, f"logo: couldn't use {logo_url} ({exc}); used the text wordmark"
+
+
+def _ai_photo(product: Product, services: Services) -> tuple[Image.Image, str, str | None]:
+    """The product painted by the image model from its catalog description.
+
+    Seed 0 every time: a "New angle" changes the copy and the background, not the product.
+    """
+    prompt = (f"{product.category}: {product.name}. {product.description} "
+              f"Details: {'; '.join(product.features[:3])}")
+    painted = services.scenes.generate(prompt, PRODUCT_PHOTO_SIZE, [], 0, rails=PRODUCT_PHOTO_RAILS)
+    if painted.source != "gradient":
+        return painted.image, "ai", None
+    photo, source = load_product_image(product)
+    reason = painted.note or "the image service is off"
+    return photo, source, f"photo: AI photo not available ({reason}); used the catalog photo"
 
 
 def run_product(product: Product, services: Services, *, write: bool = True,

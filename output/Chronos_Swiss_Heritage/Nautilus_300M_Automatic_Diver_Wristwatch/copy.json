@@ -1,0 +1,97 @@
+{
+  "variants": [
+    {
+      "angle": "pain_point",
+      "headline": "300M Water Resistance Without The $5,000 Swiss Price Tag",
+      "hook": "Stop paying $5,000 for a real mechanical diver. Get 300m rating and sapphire glass from $260.",
+      "primary_text": "Most luxury tool watches charge thousands just for brand prestige. The Nautilus 300M delivers an automatic NH35 movement, 316L surgical steel, and Super-LumiNova BGW9 lume for a fraction of that cost. High-grade diver specs shouldn't require a five-figure investment.",
+      "bullets": [
+        "300m water resistance with screw-down crown",
+        "Japanese NH35 automatic movement with zero batteries",
+        "Scratch-proof sapphire crystal and ceramic bezel"
+      ],
+      "cta": "Shop Nautilus 300M"
+    },
+    {
+      "angle": "emotional",
+      "headline": "Engineered With 316L Surgical Steel and NH35 Automatic Movement",
+      "hook": "A real mechanical wristwatch isn't just an accessory. It is a legacy built in 316L steel.",
+      "primary_text": "Built for men who appreciate mechanical utility and solid craftsmanship. The Nautilus 300M pairs a 120-click ceramic bezel with Swiss Super-LumiNova BGW9 lume for clear visibility at 300 meters deep. Wear classic heritage engineering from $260.",
+      "bullets": [
+        "Swiss BGW9 Super-LumiNova luminous hands and markers",
+        "Solid surgical 316L stainless steel case",
+        "120-click unidirectional scratch-resistant ceramic bezel"
+      ],
+      "cta": "Claim Yours Today"
+    }
+  ],
+  "carousel": [
+    {
+      "title": "300M Diver Built From 316L Steel",
+      "body": "Engineered with professional specs starting from $260."
+    },
+    {
+      "title": "NH35 Automatic Movement",
+      "body": "Self-winding Japanese mechanical movement powers every second without battery replacements."
+    },
+    {
+      "title": "Anti-Reflective Sapphire Crystal",
+      "body": "Ultra-tough sapphire glass resists scratches while the 120-click ceramic bezel measures dive time."
+    },
+    {
+      "title": "BGW9 Swiss Lume & 300M Rating",
+      "body": "Screw-down crown seals out water down to 30 ATM while Super-LumiNova glows brightly in total darkness."
+    },
+    {
+      "title": "Shop The Nautilus 300M Now",
+      "body": "Get genuine mechanical diver engineering from $260."
+    }
+  ],
+  "captions": {
+    "instagram": {
+      "text": "Stop paying five figures for real mechanical diver specs. ⌚\n\nThe Nautilus 300M Automatic delivers a 300-meter depth rating, Japanese NH35 movement, and Swiss BGW9 Super-LumiNova lume.\n\nCrafted from surgical 316L stainless steel with a scratch-proof anti-reflective sapphire crystal. Built for deep water tests and everyday wear starting from $260.",
+      "hashtags": [
+        "#WatchesOfInstagram",
+        "#DiveWatch",
+        "#AutomaticWatch",
+        "#WatchCollector",
+        "#WatchAddict",
+        "#MensStyle",
+        "#WristCheck",
+        "#Horology",
+        "#EverydayCarry",
+        "#WristWatch"
+      ]
+    },
+    "tiktok": {
+      "text": "300 meters deep. Automatic mechanical movement. Zero $5,000 markup. ⚡ Get real dive specs from $260.",
+      "hashtags": [
+        "#watchtok",
+        "#divewatch",
+        "#watchesoftiktok",
+        "#mensfashion",
+        "#horology"
+      ]
+    },
+    "facebook": {
+      "text": "Most luxury dive watches charge thousands simply for the logo.\n\nThe Nautilus 300M Automatic is built differently. It features a certified 300m depth rating, solid 316L surgical steel case, scratch-resistant ceramic bezel, and a self-winding Japanese NH35 automatic movement.\n\nGet real mechanical engineering starting from $260.",
+      "hashtags": [
+        "#WatchCollector",
+        "#DiveWatch",
+        "#MensStyle"
+      ]
+    },
+    "linkedin": {
+      "text": "True engineering does not require a $5,000 Swiss markup.\n\nThe Nautilus 300M Automatic Diver combines a Japanese NH35 self-winding movement with a surgical 316L stainless steel case and anti-reflective sapphire crystal glass.\n\nDesigned for professionals who value mechanical precision, durability, and fair pricing. Available from $260.",
+      "hashtags": [
+        "#Engineering",
+        "#Horology",
+        "#ProductDesign",
+        "#LuxuryGoods",
+        "#Watches"
+      ]
+    }
+  },
+  "language": "en",
+  "direction": "ltr"
+}

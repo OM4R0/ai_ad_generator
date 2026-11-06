@@ -1,0 +1,131 @@
+{
+  "product": {
+    "id": 2,
+    "name": "Oxford Heritage Handcrafted Brogues",
+    "brand_name": "Kingsman & Co.",
+    "category": "Footwear & Shoes",
+    "description": "Hand-stitched full-grain calfskin leather oxford brogues built with classic Goodyear welt construction for enduring elegance.",
+    "features": [
+      "100% full-grain Italian calfskin",
+      "Goodyear welted resoleable leather sole",
+      "Hand-burnished cognac finish",
+      "Cushioned cork inner footbed",
+      "Wingtip perforated detailing"
+    ],
+    "target_audience": "Executives, businessmen, formal event attendees aged 28–60",
+    "price_range": "$240 – $380",
+    "usp": "Timeless British craftsmanship that shapes to your foot and lasts decades",
+    "tone": "Luxury, prestigious, refined",
+    "language": "en",
+    "image_url": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\02_oxford_brogues.jpg"
+  },
+  "brand": {
+    "brand_name": "Kingsman & Co.",
+    "brand_voice": "Luxury, prestigious, refined",
+    "brand_colors": [
+      "#96522E",
+      "#5C3119",
+      "#FFFFFF"
+    ],
+    "target_market": "Executives, businessmen, formal event attendees aged 28–60",
+    "language": "en",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "leather dress shoes",
+    "dominant_colors": [
+      "#96522E",
+      "#5C3119"
+    ],
+    "materials_finish": [
+      "smooth leather",
+      "perforated leather",
+      "waxed laces"
+    ],
+    "mood": "refined, classic, professional, elegant",
+    "visual_selling_points": [
+      "intricate perforated texture",
+      "rich tan leather finish",
+      "clean stitching details"
+    ],
+    "scene_prompt": "A minimalist luxury display surface with warm directional lighting, soft neutral tones, and subtle shadows, creating an upscale boutique atmosphere.",
+    "cutout_quality_hint": "clean",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "a pair of brown leather dress shoes"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "carousel_slide_5.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1794,
+      "completion_tokens": 181,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.00432,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1228,
+      "completion_tokens": 1133,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.012039,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "cutout",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.3,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 4.19,
+    "total": 4.5
+  },
+  "created_at": "2026-11-06T22:58:11.785110Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3022,
+    "completion_tokens": 1314,
+    "estimated_cost_usd": 0.016359,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}

@@ -221,3 +221,12 @@ __marimo__/
 
 # Local project folder: keep out of the repo
 Omar-Hiring/
+
+# Local tool settings
+.claude/
+
+# Personal study notes and the hiring task brief: kept out of the repo
+docs/brief.md
+docs/interview-prep.md
+docs/how-to-present.md
+docs/code-map.md

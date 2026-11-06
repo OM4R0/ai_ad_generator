@@ -7,6 +7,7 @@ Formats:
 - feed 1080×1080, one per A/B variant (feed_a, feed_b)
 - story 1080×1920 (keeps the bottom ~250 px free for the platform's UI)
 - carousel: one 1080×1080 card per copy.carousel card (3–5): hook → features → CTA
+- plus a preview: feed A inside an Instagram post (core.mockup, FR-15)
 
 Layout rules (checked by the tests):
 - the product sits in its own zone; text boxes never overlap it
@@ -29,6 +30,7 @@ from typing import Callable, Iterator
 from PIL import Image, ImageDraw, ImageFilter
 
 from core.brand_manager import contrast_ratio, text_color_for
+from core.mockup import instagram_mockup
 from core.scene_generator import SceneGenerator, SceneResult, gradient_background
 from core.schemas import AdCopy, BrandProfile, Language, Product
 from core.text_render import TextBlock, draw_text_block, fit_text
@@ -70,8 +72,11 @@ class CreativeSet:
     product_mode: str                         # "cutout" | "framed"
     background_sources: dict[str, str]        # {"square": ..., "story": ...}
     notes: list[str] = field(default_factory=list)
+    mockup: Image.Image | None = None         # FR-15: feed A inside an Instagram post
+    photo: Image.Image | None = None          # the product photo used (side-by-side preview)
 
     def all_images(self) -> Iterator[tuple[str, Image.Image]]:
+        """The ad creatives (the mockup is a preview of feed A, not a creative)."""
         for name, image in zip(("feed_a", "feed_b"), self.feed_variants):
             yield name, image
         yield "story", self.story
@@ -94,8 +99,12 @@ def build_creatives(
     scene_prompt: str,
     remover: Remover | None = None,
     seed: int = 0,
+    logo: Image.Image | None = None,
 ) -> CreativeSet:
-    """Render every creative for one product."""
+    """Render every creative for one product.
+
+    logo: the brand's logo (RGBA); without one, the brand name is drawn as a wordmark.
+    """
     notes: list[str] = []
     cutout, mode, note = prepare_product(photo, remover or rembg_remover)
     if note:
@@ -115,7 +124,8 @@ def build_creatives(
     if story_bg.note:
         notes.append(story_bg.note)
 
-    style = _Style(language=copy.language, palette=palette, brand_name=brand.brand_name)
+    style = _Style(language=copy.language, palette=palette, brand_name=brand.brand_name,
+                   logo=logo)
     layouts: dict[str, Layout] = {}
 
     feeds = []
@@ -137,8 +147,10 @@ def build_creatives(
             cta=cta, page=(i, total))
         cards.append(image)
 
+    mockup, _ = instagram_mockup(feeds[0], brand, copy, logo=logo)
     return CreativeSet(feeds, story, cards, layouts, mode,
-                       {"square": square.source, "story": story_bg.source}, notes)
+                       {"square": square.source, "story": story_bg.source}, notes,
+                       mockup=mockup, photo=photo)
 
 
 def prepare_product(photo: Image.Image, remover: Remover) -> tuple[Image.Image, str, str | None]:
@@ -237,6 +249,7 @@ class _Style:
     language: Language
     palette: dict[str, str]
     brand_name: str
+    logo: Image.Image | None = field(default=None, compare=False)
 
     @property
     def rtl(self) -> bool:
@@ -360,8 +373,20 @@ def _place_product(canvas: Image.Image, product: Image.Image, zone: Box) -> Box:
     return (x, y, x + size[0], y + size[1])
 
 
+LOGO_MAX = (320, 56)   # the logo fits this box (width, height), keeping its shape
+
+
 def _wordmark(canvas: Image.Image, style: _Style, *, y: int) -> Box:
-    """The brand name as a text logo, coloured for contrast with what's behind it."""
+    """The brand's logo if there is one, else its name as a text logo coloured for
+    contrast with what's behind it. On the reading-start side (right for Arabic)."""
+    if style.logo is not None:
+        scale = min(LOGO_MAX[0] / style.logo.width, LOGO_MAX[1] / style.logo.height)
+        logo = style.logo.resize((max(1, round(style.logo.width * scale)),
+                                  max(1, round(style.logo.height * scale))),
+                                 Image.Resampling.LANCZOS)
+        x = canvas.width - MARGIN - logo.width if style.rtl else MARGIN
+        canvas.alpha_composite(logo, (x, y))
+        return (x, y, x + logo.width, y + logo.height)
     w = canvas.width
     block = fit_text(style.brand_name.upper(), Language.EN, "medium",
                      max_width=w - 2 * MARGIN, max_lines=1, max_size=32, min_size=22)

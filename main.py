@@ -119,9 +119,12 @@ def format_run(index: int, total: int, run: ProductRun) -> str:
     seconds = result.timings_s.get("total")
     lines = [f"{head}  OK" + (f" {seconds:.0f}s" if seconds is not None else "")]
     if result.usage:
+        totals = usage_totals(result.usage)
+        tokens = totals["prompt_tokens"] + totals["completion_tokens"]
         lines.append("         " + " | ".join(
             f"{u.step}: {u.served_model or u.model}{' (cache)' if u.cached else ''}"
-            for u in result.usage))
+            for u in result.usage)
+            + f" | {tokens:,} tokens, est. ${totals['estimated_cost_usd']:.4f}")
     lines += [f"         ! fallback: {f}" for f in result.fallbacks]
     lines += [f"         ! check: {w}" for w in result.warnings]
     return "\n".join(lines)
@@ -141,8 +144,9 @@ def format_summary(runs: list[ProductRun], output_dir: Path, *, offline: bool = 
         + (" (offline)" if offline else ""),
         f"{totals['llm_calls']} LLM calls ({live} live, {totals['cached_calls']} from cache), "
         f"{tokens:,} tokens",
-        f"Cost: ${totals['actual_cost_usd']:.4f} actual (free tiers); "
-        f"${totals['spent_this_run_usd']:.4f} this run at the reference paid price",
+        f"Cost: ${totals['actual_cost_usd']:.4f} actual (free tiers). At the reference paid "
+        f"price: ${totals['estimated_cost_usd']:.4f} for these ads, "
+        f"${totals['spent_this_run_usd']:.4f} of it spent this run (the rest came from cache)",
         f"{fallbacks} fallback(s), {warnings} warning(s) to check",
         f"Output: {output_dir}",
     ]

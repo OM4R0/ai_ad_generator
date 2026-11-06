@@ -94,7 +94,8 @@ def test_w2_writes_exactly_the_structure_the_brief_asks_for(tmp_path):
     assert _names(folder) == {
         "copy.json", "metadata.json", "creative_feed.png", "creative_feed_b.png",
         "creative_story.png", "carousel_slide_1.png", "carousel_slide_2.png",
-        "carousel_slide_3.png", "carousel_slide_4.png"}
+        "carousel_slide_3.png", "carousel_slide_4.png",
+        "mockup_instagram.png"}                     # FR-15 bonus: feed A inside an Instagram post
 
 
 def test_w3_images_are_png_at_the_exact_sizes(tmp_path):

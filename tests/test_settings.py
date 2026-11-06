@@ -10,6 +10,7 @@ ENV_VARS = (
     "LLM_BASE_URL", "LLM_API_KEY", "VISION_MODEL", "COPY_MODEL", "IMAGE_PROVIDER",
     "LLM_TIMEOUT_S", "FALLBACK_MODELS", "CATALOG_PATH", "LLM_FALLBACK_MODELS",
     "FALLBACK_API_KEY", "FALLBACK_BASE_URL",
+    "REFERENCE_INPUT_PRICE_PER_MTOK", "REFERENCE_OUTPUT_PRICE_PER_MTOK",
 )
 
 
@@ -26,6 +27,16 @@ def test_empty_values_fall_back_to_defaults(monkeypatch, clean_env):
     s = Settings.from_env(clean_env)
     assert s.llm_base_url.startswith("https://generativelanguage.googleapis.com")
     assert s.image_provider == "pollinations"
+
+
+def test_the_cost_estimate_has_a_reference_paid_price_by_default(monkeypatch, clean_env):
+    # FR-14. Live run 2026-11-07: no price was set, so every estimate said $0.0000.
+    s = Settings.from_env(clean_env)
+    assert (s.reference_input_price_per_mtok, s.reference_output_price_per_mtok) == (1.50, 9.00)
+    monkeypatch.setenv("REFERENCE_INPUT_PRICE_PER_MTOK", "0.1")
+    monkeypatch.setenv("REFERENCE_OUTPUT_PRICE_PER_MTOK", "0.4")
+    s = Settings.from_env(clean_env)
+    assert (s.reference_input_price_per_mtok, s.reference_output_price_per_mtok) == (0.1, 0.4)
 
 
 def test_copy_model_defaults_to_vision_model(monkeypatch, clean_env):

@@ -108,6 +108,12 @@ def test_m9_a_product_line_names_the_models_that_really_answered():
     assert "gemini-a" in text and "vendor/x:free" in text and "cache" in text
 
 
+def test_m9_a_product_line_shows_its_tokens_and_estimated_cost():
+    # Bonus "Cost / Token Tracker": estimated cost PER generated product.
+    text = main.format_run(1, 10, _ok_run(HEADPHONES, usage=[LIVE, REPLAY]))
+    assert "4,500 tokens" in text and "$0.0045" in text
+
+
 def test_m9_fallbacks_and_warnings_are_shown_under_the_product():
     text = main.format_run(1, 1, _ok_run(HEADPHONES, fallbacks=["copy: template (quota)"],
                                          warnings=["the photo shows Chanel"]))
@@ -127,6 +133,7 @@ def test_m10_the_summary_counts_successes_calls_tokens_and_cost(tmp_path):
     assert "2 LLM calls" in text and "1 live" in text and "1 from cache" in text
     assert "4,500 tokens" in text
     assert "$0.0015" in text                     # only the live call is spent this run
+    assert "$0.0045" in text                     # what these ads cost at the paid price
     assert "1 fallback" in text
     assert str(tmp_path) in text
 

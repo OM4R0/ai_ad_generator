@@ -1,0 +1,132 @@
+{
+  "product": {
+    "id": 20,
+    "name": "AeroFrame Polarized Titanium Aviator Sunglasses",
+    "brand_name": "SolOptics Eyewear",
+    "category": "Watches & Eyewear",
+    "description": "نظارات شمسية أفياتور كلاسيكية مصنوعة من معدن البيتا-تيتانيوم فائق المرونة مع عدسات مستقطبة بولارايزد 9 طبقات تحمي العين من الوهج وأشعة الشمس.",
+    "features": [
+      "إطار تيتانيوم مرن خفيف بوزن 14 جرام فقط لا يضغط على الأنف",
+      "عدسات Polarized TAC بـ 9 طبقات تحجب 99.9% من انعكاسات الطرق والماء",
+      "حماية قصوى UV400 ضد الأشعة فوق البنفسجية الضارة",
+      "مفصلات مرنة مع وسادات أنف سيليكونية مريحة تمنع الانزلاق",
+      "تأتي مع جراب جلدي فاخر وقماش تنظيف من المايكروفايبر"
+    ],
+    "target_audience": "السائقين، المسافرين، عشاق الأناقة والأنشطة الخارجية (20–55 سنة)",
+    "price_range": "$79 – $120",
+    "usp": "خفيفة كالريشة على وجهك مع وضوح بصري مذهل يزيل الوهج تماماً أثناء القيادة",
+    "tone": "Stylish, crisp, adventurous",
+    "language": "ar",
+    "image_url": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&auto=format&fit=crop&q=80",
+    "image_path": "C:\\Users\\omarm\\OneDrive\\Desktop\\ai-ad-generator\\product_images\\20_titanium_sunglasses.jpg"
+  },
+  "brand": {
+    "brand_name": "SolOptics Eyewear",
+    "brand_voice": "Stylish, crisp, adventurous",
+    "brand_colors": [
+      "#D4AF37",
+      "#2F4F4F",
+      "#111111"
+    ],
+    "target_market": "السائقين، المسافرين، عشاق الأناقة والأنشطة الخارجية (20–55 سنة)",
+    "language": "ar",
+    "arabic_register": "msa_gulf",
+    "logo_url": null,
+    "sources": [
+      "catalog",
+      "vision"
+    ],
+    "warnings": []
+  },
+  "vision": {
+    "product_type": "round metal frame sunglasses",
+    "dominant_colors": [
+      "#D4AF37",
+      "#2F4F4F"
+    ],
+    "materials_finish": [
+      "glossy metal frame",
+      "tinted polarized lenses",
+      "clear silicone nose pads"
+    ],
+    "mood": "stylish, crisp, adventurous, minimalist",
+    "visual_selling_points": [
+      "slim lightweight metal frame",
+      "classic round dark lenses",
+      "clean minimalist bridge and temple design"
+    ],
+    "scene_prompt": "Bright, minimalist sunlight casting soft shadows on a clean white marble surface with warm golden hour lighting and ample negative space above.",
+    "cutout_quality_hint": "clean",
+    "visible_brands": [],
+    "photo_matches_product": true,
+    "photo_shows": "round sunglasses on a reflective surface"
+  },
+  "files": [
+    "carousel_slide_1.png",
+    "carousel_slide_2.png",
+    "carousel_slide_3.png",
+    "carousel_slide_4.png",
+    "copy.json",
+    "creative_feed.png",
+    "creative_feed_b.png",
+    "creative_story.png",
+    "mockup_instagram.png"
+  ],
+  "usage": [
+    {
+      "step": "vision",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash-lite",
+      "served_model": "gemini-3.5-flash-lite",
+      "prompt_tokens": 1894,
+      "completion_tokens": 213,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.004758,
+      "latency_s": 0.0,
+      "cached": true
+    },
+    {
+      "step": "copy",
+      "provider": "generativelanguage.googleapis.com",
+      "model": "gemini-3.5-flash",
+      "served_model": "gemini-3.5-flash",
+      "prompt_tokens": 1503,
+      "completion_tokens": 1486,
+      "actual_cost_usd": 0.0,
+      "estimated_cost_usd": 0.015629,
+      "latency_s": 0.0,
+      "cached": true
+    }
+  ],
+  "fallbacks": [
+    "cut-out fell apart into separate pieces (largest piece 56%); used the framed photo"
+  ],
+  "warnings": [],
+  "prompt_versions": {
+    "vision": "vision_v3",
+    "copy": "copy_v2"
+  },
+  "image_source": "local",
+  "product_mode": "framed",
+  "background_sources": {
+    "square": "cache",
+    "story": "cache"
+  },
+  "timings_s": {
+    "image": 0.28,
+    "vision": 0.0,
+    "copy": 0.01,
+    "visuals": 1.77,
+    "total": 2.06
+  },
+  "created_at": "2026-11-06T22:58:26.078172Z",
+  "totals": {
+    "llm_calls": 2,
+    "cached_calls": 2,
+    "prompt_tokens": 3397,
+    "completion_tokens": 1699,
+    "estimated_cost_usd": 0.020387,
+    "actual_cost_usd": 0.0,
+    "spent_this_run_usd": 0
+  }
+}
