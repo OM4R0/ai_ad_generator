@@ -49,7 +49,7 @@ python main.py --all                # all 30 products
 python main.py --offline            # no network: cached answers, otherwise templates
 python main.py --refresh            # ignore cached AI answers (spends requests)
 streamlit run app.py                # the dashboard
-pytest                              # the tests: no network, no quota (about 2 minutes)
+pytest                              # the tests: no network, no quota (about 3–4 minutes)
 ```
 
 The first run downloads the background-removal model once (about 170 MB). After that, a
